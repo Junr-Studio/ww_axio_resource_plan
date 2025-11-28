@@ -2,7 +2,7 @@
   <div class="timeline-header">
     <!-- Resource column header spanning both rows -->
     <div class="resource-column-header" :style="resourceColumnStyle">
-      <span class="header-title">Resources</span>
+      <span class="header-title">{{ t.resources }}</span>
     </div>
 
     <!-- Right side with week numbers and days -->
@@ -16,7 +16,7 @@
             class="week-header"
             :style="getWeekStyle(week)"
           >
-            <span class="week-label">W{{ week.weekNumber }}</span>
+            <span class="week-label">{{ t.week }}{{ week.weekNumber }}</span>
           </div>
         </div>
       </div>
@@ -43,6 +43,10 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { format } from 'date-fns';
+import { useLocale } from '../composables/useLocale';
+
+// Get locale for internationalization
+const { dateFnsLocale, t } = useLocale();
 
 const props = defineProps({
   days: {
@@ -89,7 +93,7 @@ const getWeekStyle = (week) => {
  */
 const getMonthLabel = (day) => {
   if (!day?.date) return '';
-  return format(day.date, 'MMM');
+  return format(day.date, 'MMM', { locale: dateFnsLocale.value });
 };
 
 // Explicitly expose refs to parent component

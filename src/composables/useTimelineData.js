@@ -3,12 +3,15 @@ import { addDays, format, getISOWeek, getYear, differenceInDays, parseISO, max }
 import { mockResources, mockProjects, mockAssignments } from '../mockData';
 import { DEFAULT_NUMBER_OF_DAYS } from '../utils/constants';
 import { assignProjectColors, getProjectColor } from '../utils/colorHelpers';
+import { useLocale } from './useLocale';
 
 /**
  * Composable for timeline data management
  * Handles joined assignments data with nested resource/project objects
  */
 export function useTimelineData(props) {
+  // Get locale for internationalization
+  const { dateFnsLocale } = useLocale();
   /**
    * Get assignments - either from mock data or bound data
    * Now expects assignments with nested resource and project objects
@@ -267,9 +270,9 @@ export function useTimelineData(props) {
       const dayDate = addDays(startDate, i);
       days.push({
         dayKey: format(dayDate, 'yyyy-MM-dd'),
-        dayOfWeek: format(dayDate, 'EEE'),
+        dayOfWeek: format(dayDate, 'EEE', { locale: dateFnsLocale.value }),
         dayNumber: format(dayDate, 'd'),
-        monthYear: format(dayDate, 'MMM yyyy'),
+        monthYear: format(dayDate, 'MMM yyyy', { locale: dateFnsLocale.value }),
         weekNumber: getISOWeek(dayDate),
         year: getYear(dayDate),
         date: dayDate,
