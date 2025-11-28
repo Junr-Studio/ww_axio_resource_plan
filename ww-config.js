@@ -56,6 +56,325 @@ export default {
       /* wwEditor:end */
     },
 
+    // Formula properties for flexible field mapping
+    // Assignment-level fields
+    assignmentIdFormula: {
+      label: { en: 'Assignment ID Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['id']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field to use as assignment ID',
+      },
+      /* wwEditor:end */
+    },
+
+    assignmentStartDateFormula: {
+      label: { en: 'Start Date Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['assignement_start_date'] || context.mapping?.['start_date']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field containing assignment start date',
+      },
+      /* wwEditor:end */
+    },
+
+    assignmentEndDateFormula: {
+      label: { en: 'End Date Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['assignement_end_date'] || context.mapping?.['end_date']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field containing assignment end date',
+      },
+      /* wwEditor:end */
+    },
+
+    assignmentCapacityFormula: {
+      label: { en: 'Capacity Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['assigned_capacity'] || context.mapping?.['capacity_percentage'] || context.mapping?.['capacity'] || 1",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'number',
+        tooltip: 'Field containing capacity (decimal 0-1 or percentage 0-100)',
+      },
+      /* wwEditor:end */
+    },
+
+    // Resource nested object fields
+    resourceObjectPath: {
+      label: { en: 'Resource Object Path' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['resource']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'object',
+        tooltip: 'Nested resource object',
+      },
+      /* wwEditor:end */
+    },
+
+    resourceIdFormula: {
+      label: { en: 'Resource ID Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['id']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in resource object for ID',
+      },
+      /* wwEditor:end */
+    },
+
+    resourceFirstNameFormula: {
+      label: { en: 'Resource First Name Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['first_name'] || context.mapping?.['firstName']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in resource object for first name',
+      },
+      /* wwEditor:end */
+    },
+
+    resourceLastNameFormula: {
+      label: { en: 'Resource Last Name Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['last_name'] || context.mapping?.['lastName']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in resource object for last name',
+      },
+      /* wwEditor:end */
+    },
+
+    resourceTitleFormula: {
+      label: { en: 'Resource Title/Position Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['title'] || context.mapping?.['position']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in resource object for title/position',
+      },
+      /* wwEditor:end */
+    },
+
+    resourceAvatarFormula: {
+      label: { en: 'Resource Avatar Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['avatar']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in resource object for avatar URL',
+      },
+      /* wwEditor:end */
+    },
+
+    // Project nested object fields
+    projectObjectPath: {
+      label: { en: 'Project Object Path' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['project']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'object',
+        tooltip: 'Nested project object',
+      },
+      /* wwEditor:end */
+    },
+
+    projectIdFormula: {
+      label: { en: 'Project ID Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['id']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in project object for ID',
+      },
+      /* wwEditor:end */
+    },
+
+    projectNameFormula: {
+      label: { en: 'Project Name Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['title'] || context.mapping?.['name']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in project object for name/title',
+      },
+      /* wwEditor:end */
+    },
+
+    projectColorFormula: {
+      label: { en: 'Project Color Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['color']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in project object for color (null = auto-generated)',
+      },
+      /* wwEditor:end */
+    },
+
+    projectStatusFormula: {
+      label: { en: 'Project Status Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['status']",
+      },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field in project object for status',
+      },
+      /* wwEditor:end */
+    },
+
     // Timeline Settings
     numberOfDays: {
       label: { en: "Number of Days (Optional)" },

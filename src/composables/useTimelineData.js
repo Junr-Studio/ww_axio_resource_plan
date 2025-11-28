@@ -21,26 +21,37 @@ export function useTimelineData(props) {
       return mockAssignments;
     }
 
+    // Use formula mapping for dynamic field resolution
+    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
+
     return boundAssignments.map(item => {
-      // Extract nested resource object
-      const resource = item.resource || {};
-      const resourceId = resource.id || item.resource_id || `resource-${Date.now()}-${Math.random()}`;
+      // Resolve assignment-level fields
+      const assignmentId = resolveMappingFormula(props.content?.assignmentIdFormula, item) ?? item.id;
+      const startDate = resolveMappingFormula(props.content?.assignmentStartDateFormula, item) ?? item.assignement_start_date ?? item.start_date ?? '';
+      const endDate = resolveMappingFormula(props.content?.assignmentEndDateFormula, item) ?? item.assignement_end_date ?? item.end_date ?? '';
+      const capacityRaw = resolveMappingFormula(props.content?.assignmentCapacityFormula, item) ?? item.assigned_capacity ?? item.capacity_percentage ?? item.capacity ?? 1;
 
-      // Extract nested project object
-      const project = item.project || {};
-      const projectId = project.id || item.project_id || `project-${Date.now()}-${Math.random()}`;
+      // Resolve nested resource object and its fields
+      const resourceObj = resolveMappingFormula(props.content?.resourceObjectPath, item) ?? item.resource ?? {};
+      const resourceId = resolveMappingFormula(props.content?.resourceIdFormula, resourceObj) ?? resourceObj.id ?? item.resource_id ?? `resource-${Date.now()}-${Math.random()}`;
+      const resourceFirstName = resolveMappingFormula(props.content?.resourceFirstNameFormula, resourceObj) ?? resourceObj.first_name ?? resourceObj.firstName ?? '';
+      const resourceLastName = resolveMappingFormula(props.content?.resourceLastNameFormula, resourceObj) ?? resourceObj.last_name ?? resourceObj.lastName ?? '';
+      const resourceTitle = resolveMappingFormula(props.content?.resourceTitleFormula, resourceObj) ?? resourceObj.title ?? resourceObj.position ?? '';
+      const resourceAvatar = resolveMappingFormula(props.content?.resourceAvatarFormula, resourceObj) ?? resourceObj.avatar ?? '';
 
-      // Parse dates
-      const startDate = item.assignement_start_date || item.start_date || '';
-      const endDate = item.assignement_end_date || item.end_date || '';
+      // Resolve nested project object and its fields
+      const projectObj = resolveMappingFormula(props.content?.projectObjectPath, item) ?? item.project ?? {};
+      const projectId = resolveMappingFormula(props.content?.projectIdFormula, projectObj) ?? projectObj.id ?? item.project_id ?? `project-${Date.now()}-${Math.random()}`;
+      const projectName = resolveMappingFormula(props.content?.projectNameFormula, projectObj) ?? projectObj.title ?? projectObj.name ?? 'Untitled Project';
+      const projectColor = resolveMappingFormula(props.content?.projectColorFormula, projectObj) ?? projectObj.color;
+      const projectStatus = resolveMappingFormula(props.content?.projectStatusFormula, projectObj) ?? projectObj.status ?? 'planned';
 
       // Convert capacity: if decimal (0-1), multiply by 100; if already percentage (0-100), use as-is
-      const capacityRaw = item.assigned_capacity || item.capacity_percentage || item.capacity || 1;
       const capacityNum = Number(capacityRaw);
       const capacity = capacityNum <= 1 ? capacityNum * 100 : capacityNum;
 
       return {
-        id: item.id || `assignment-${Date.now()}-${Math.random()}`,
+        id: assignmentId || `assignment-${Date.now()}-${Math.random()}`,
         resource_id: resourceId,
         project_id: projectId,
         start_date: startDate,
@@ -49,9 +60,17 @@ export function useTimelineData(props) {
         // Keep project data for display (color will be assigned later)
         project: {
           id: projectId,
-          name: project.title || project.name || 'Untitled Project',
-          color: project.color, // Can be null, will be assigned later
-          status: project.status || 'planned',
+          name: projectName,
+          color: projectColor, // Can be null, will be assigned later
+          status: projectStatus,
+        },
+        // Store resolved resource data for extraction
+        __resolvedResource: {
+          id: resourceId,
+          first_name: resourceFirstName,
+          last_name: resourceLastName,
+          title: resourceTitle,
+          avatar: resourceAvatar,
         },
         // Include original nested data for reference
         originalItem: item,
@@ -62,6 +81,7 @@ export function useTimelineData(props) {
   /**
    * Extract unique resources from assignments
    * Creates resource rows for the timeline
+   * Uses formula-resolved resource data
    */
   const activeResources = computed(() => {
     const useMockData = props.content?.useMockData ?? false;
@@ -77,7 +97,7 @@ export function useTimelineData(props) {
     const resourceMap = new Map();
 
     assignments.forEach(assignment => {
-      const resource = assignment.originalItem?.resource;
+      const resource = assignment.__resolvedResource;
       if (!resource?.id) return;
 
       // Only add if not already in map
@@ -100,6 +120,7 @@ export function useTimelineData(props) {
   /**
    * Extract unique projects from assignments and assign colors
    * Projects with null colors get unique generated colors
+   * Uses formula-resolved project data
    */
   const activeProjects = computed(() => {
     const useMockData = props.content?.useMockData ?? false;
@@ -115,17 +136,17 @@ export function useTimelineData(props) {
     const projectMap = new Map();
 
     assignments.forEach(assignment => {
-      const project = assignment.originalItem?.project;
+      const project = assignment.project; // Use formula-resolved project data
       if (!project?.id) return;
 
       // Only add if not already in map
       if (!projectMap.has(project.id)) {
         projectMap.set(project.id, {
           id: project.id,
-          name: project.title || project.name || 'Untitled Project',
+          name: project.name || 'Untitled Project',
           color: project.color, // Can be null
           status: project.status || 'planned',
-          originalItem: project,
+          originalItem: assignment.originalItem?.project,
         });
       }
     });
