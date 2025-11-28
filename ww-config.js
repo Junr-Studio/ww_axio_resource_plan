@@ -376,18 +376,37 @@ export default {
     },
 
     // Timeline Settings
-    numberOfDays: {
-      label: { en: "Number of Days (Optional)" },
-      type: "Number",
+    useManualDays: {
+      label: { en: "Override Timeline Length" },
+      type: "OnOff",
       section: "settings",
+      defaultValue: false,
       bindable: true,
       /* wwEditor:start */
       bindingValidation: {
-        type: "number",
-        tooltip: "Override auto-calculation to set a fixed number of days. Leave empty for automatic calculation based on assignments.",
+        type: "boolean",
+        tooltip: "Enable to manually set the number of days. Disable for automatic calculation based on assignments.",
       },
       propertyHelp: {
-        en: "Leave empty to automatically calculate timeline length based on your assignments. Set a value to manually override the timeline length.",
+        en: "Toggle ON to manually set the timeline length. Toggle OFF to automatically calculate based on your assignments (latest end date + 7 days buffer).",
+      },
+      /* wwEditor:end */
+    },
+
+    numberOfDays: {
+      label: { en: "Number of Days" },
+      type: "Number",
+      section: "settings",
+      defaultValue: 90,
+      bindable: true,
+      hidden: (content) => !content?.useManualDays,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "number",
+        tooltip: "Number of days to display in the timeline",
+      },
+      propertyHelp: {
+        en: "Set the number of days to display in the timeline from today's date.",
       },
       /* wwEditor:end */
     },

@@ -250,10 +250,13 @@ export function useTimelineData(props) {
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Use manual numberOfDays if specified, otherwise calculate from assignments
-    const numberOfDays = props.content?.numberOfDays || calculateRequiredDays();
+    // Use manual numberOfDays if toggle enabled, otherwise calculate from assignments
+    const numberOfDays = props.content?.useManualDays
+      ? (props.content?.numberOfDays || 90)
+      : calculateRequiredDays();
 
     console.log('🗓️ Timeline calculation:', {
+      useManualDays: props.content?.useManualDays,
       numberOfDays,
       startDate: format(startDate, 'yyyy-MM-dd'),
       assignmentCount: activeAssignments.value?.length
