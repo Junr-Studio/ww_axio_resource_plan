@@ -8,7 +8,7 @@
       </div>
       <div class="resource-details">
         <div class="resource-name">{{ resource.name }}</div>
-        <div v-if="resource.role" class="resource-role">{{ resource.role }}</div>
+        <div v-if="resource.position" class="resource-position">{{ resource.position }}</div>
       </div>
     </div>
 
@@ -193,7 +193,7 @@ export default {
   text-overflow: ellipsis;
 }
 
-.resource-role {
+.resource-position {
   font-size: 12px;
   color: #6b7280;
   white-space: nowrap;

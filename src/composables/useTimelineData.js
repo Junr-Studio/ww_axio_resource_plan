@@ -11,16 +11,39 @@ export function useTimelineData(props) {
   /**
    * Get assignments - either from mock data or bound data
    * Needs to be defined early so timelineDays can use it
+   * Process with formula mappings for dynamic field resolution
    */
   const activeAssignments = computed(() => {
-    const useMockData = props.content?.useMockData ?? true;
+    const useMockData = props.content?.useMockData ?? false;
     const boundAssignments = props.content?.assignments;
 
-    if (useMockData || !boundAssignments || boundAssignments.length === 0) {
+    if (useMockData || !Array.isArray(boundAssignments) || boundAssignments.length === 0) {
       return mockAssignments;
     }
 
-    return boundAssignments;
+    // Use formula mapping for dynamic field resolution
+    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
+
+    return boundAssignments.map(item => {
+      const id = resolveMappingFormula(props.content?.assignmentsIdFormula, item) ?? item.id;
+      const resourceId = resolveMappingFormula(props.content?.assignmentsResourceIdFormula, item) ?? item.resource_id;
+      const projectId = resolveMappingFormula(props.content?.assignmentsProjectIdFormula, item) ?? item.project_id;
+      const startDate = resolveMappingFormula(props.content?.assignmentsStartDateFormula, item) ?? item.start_date;
+      const endDate = resolveMappingFormula(props.content?.assignmentsEndDateFormula, item) ?? item.end_date;
+      const capacity = resolveMappingFormula(props.content?.assignmentsCapacityFormula, item) ?? item.capacity_percentage ?? item.capacity ?? 100;
+
+      return {
+        id: id || `assignment-${Date.now()}-${Math.random()}`,
+        resource_id: resourceId,
+        project_id: projectId,
+        start_date: startDate,
+        end_date: endDate,
+        capacity_percentage: Number(capacity) || 100,
+        project: item.project ?? { name: '', color: '' },
+        // Include original data for reference
+        originalItem: item,
+      };
+    });
   });
 
   /**
@@ -162,30 +185,71 @@ export function useTimelineData(props) {
 
   /**
    * Get resources - either from mock data or bound data
+   * Process with formula mappings for dynamic field resolution
    */
   const activeResources = computed(() => {
-    const useMockData = props.content?.useMockData ?? true;
+    const useMockData = props.content?.useMockData ?? false;
     const boundResources = props.content?.resources;
 
-    if (useMockData || !boundResources || boundResources.length === 0) {
+    if (useMockData || !Array.isArray(boundResources) || boundResources.length === 0) {
       return mockResources;
     }
 
-    return boundResources;
+    // Use formula mapping for dynamic field resolution
+    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
+
+    return boundResources.map(item => {
+      const id = resolveMappingFormula(props.content?.resourcesIdFormula, item) ?? item.id;
+      const name = resolveMappingFormula(props.content?.resourcesNameFormula, item) ?? item.name ?? `${item.first_name || ''} ${item.last_name || ''}`.trim();
+      const position = resolveMappingFormula(props.content?.resourcesPositionFormula, item) ?? item.position ?? item.title;
+      const avatar = resolveMappingFormula(props.content?.resourcesAvatarFormula, item) ?? item.avatar;
+
+      return {
+        id: id || `resource-${Date.now()}-${Math.random()}`,
+        name: name || 'Untitled Resource',
+        position: position || '',
+        avatar: avatar || '',
+        // Include original data for reference - allows access to ANY backend field
+        originalItem: item,
+      };
+    });
   });
 
   /**
    * Get projects - either from mock data or bound data
+   * Process with formula mappings for dynamic field resolution
    */
   const activeProjects = computed(() => {
-    const useMockData = props.content?.useMockData ?? true;
+    const useMockData = props.content?.useMockData ?? false;
     const boundProjects = props.content?.projects;
 
-    if (useMockData || !boundProjects || boundProjects.length === 0) {
+    if (useMockData || !Array.isArray(boundProjects) || boundProjects.length === 0) {
       return mockProjects;
     }
 
-    return boundProjects;
+    // Use formula mapping for dynamic field resolution
+    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
+
+    return boundProjects.map(item => {
+      const id = resolveMappingFormula(props.content?.projectsIdFormula, item) ?? item.id;
+      const name = resolveMappingFormula(props.content?.projectsNameFormula, item) ?? item.name;
+      const color = resolveMappingFormula(props.content?.projectsColorFormula, item) ?? item.color ?? '#3b82f6';
+      const startTargetDate = resolveMappingFormula(props.content?.projectsStartDateFormula, item) ?? item.start_target_date ?? item.start_date;
+      const status = resolveMappingFormula(props.content?.projectsStatusFormula, item) ?? item.status ?? 'planned';
+
+      return {
+        id: id || `project-${Date.now()}-${Math.random()}`,
+        name: name || 'Untitled Project',
+        color: color,
+        start_target_date: startTargetDate,
+        number_of_sprints: item.number_of_sprints ?? 6,
+        sprint_duration_weeks: item.sprint_duration_weeks ?? 2,
+        status: status,
+        sprints: item.sprints ?? [],
+        // Include original data for reference
+        originalItem: item,
+      };
+    });
   });
 
   return {
