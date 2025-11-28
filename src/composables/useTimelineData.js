@@ -2,16 +2,16 @@ import { computed } from 'vue';
 import { addDays, format, getISOWeek, getYear, differenceInDays, parseISO, max } from 'date-fns';
 import { mockResources, mockProjects, mockAssignments } from '../mockData';
 import { DEFAULT_NUMBER_OF_DAYS } from '../utils/constants';
+import { assignProjectColors, getProjectColor } from '../utils/colorHelpers';
 
 /**
  * Composable for timeline data management
- * Handles timeline days generation and mock data
+ * Handles joined assignments data with nested resource/project objects
  */
 export function useTimelineData(props) {
   /**
    * Get assignments - either from mock data or bound data
-   * Needs to be defined early so timelineDays can use it
-   * Process with formula mappings for dynamic field resolution
+   * Now expects assignments with nested resource and project objects
    */
   const activeAssignments = computed(() => {
     const useMockData = props.content?.useMockData ?? false;
@@ -21,29 +21,149 @@ export function useTimelineData(props) {
       return mockAssignments;
     }
 
-    // Use formula mapping for dynamic field resolution
-    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
-
     return boundAssignments.map(item => {
-      const id = resolveMappingFormula(props.content?.assignmentsIdFormula, item) ?? item.id;
-      const resourceId = resolveMappingFormula(props.content?.assignmentsResourceIdFormula, item) ?? item.resource_id;
-      const projectId = resolveMappingFormula(props.content?.assignmentsProjectIdFormula, item) ?? item.project_id;
-      const startDate = resolveMappingFormula(props.content?.assignmentsStartDateFormula, item) ?? item.start_date;
-      const endDate = resolveMappingFormula(props.content?.assignmentsEndDateFormula, item) ?? item.end_date;
-      const capacity = resolveMappingFormula(props.content?.assignmentsCapacityFormula, item) ?? item.capacity_percentage ?? item.capacity ?? 100;
+      // Extract nested resource object
+      const resource = item.resource || {};
+      const resourceId = resource.id || item.resource_id || `resource-${Date.now()}-${Math.random()}`;
+
+      // Extract nested project object
+      const project = item.project || {};
+      const projectId = project.id || item.project_id || `project-${Date.now()}-${Math.random()}`;
+
+      // Parse dates
+      const startDate = item.assignement_start_date || item.start_date || '';
+      const endDate = item.assignement_end_date || item.end_date || '';
+
+      // Convert capacity: if decimal (0-1), multiply by 100; if already percentage (0-100), use as-is
+      const capacityRaw = item.assigned_capacity || item.capacity_percentage || item.capacity || 1;
+      const capacityNum = Number(capacityRaw);
+      const capacity = capacityNum <= 1 ? capacityNum * 100 : capacityNum;
 
       return {
-        id: id || `assignment-${Date.now()}-${Math.random()}`,
+        id: item.id || `assignment-${Date.now()}-${Math.random()}`,
         resource_id: resourceId,
         project_id: projectId,
         start_date: startDate,
         end_date: endDate,
-        capacity_percentage: Number(capacity) || 100,
-        project: item.project ?? { name: '', color: '' },
-        // Include original data for reference
+        capacity_percentage: capacity || 100,
+        // Keep project data for display (color will be assigned later)
+        project: {
+          id: projectId,
+          name: project.title || project.name || 'Untitled Project',
+          color: project.color, // Can be null, will be assigned later
+          status: project.status || 'planned',
+        },
+        // Include original nested data for reference
         originalItem: item,
       };
     });
+  });
+
+  /**
+   * Extract unique resources from assignments
+   * Creates resource rows for the timeline
+   */
+  const activeResources = computed(() => {
+    const useMockData = props.content?.useMockData ?? false;
+
+    if (useMockData) {
+      return mockResources;
+    }
+
+    const assignments = activeAssignments.value;
+    if (!assignments || assignments.length === 0) return [];
+
+    // Create a map to deduplicate resources
+    const resourceMap = new Map();
+
+    assignments.forEach(assignment => {
+      const resource = assignment.originalItem?.resource;
+      if (!resource?.id) return;
+
+      // Only add if not already in map
+      if (!resourceMap.has(resource.id)) {
+        const name = `${resource.first_name || ''} ${resource.last_name || ''}`.trim() || resource.name || 'Untitled Resource';
+
+        resourceMap.set(resource.id, {
+          id: resource.id,
+          name: name,
+          position: resource.title || resource.position || '',
+          avatar: resource.avatar || '',
+          originalItem: resource,
+        });
+      }
+    });
+
+    return Array.from(resourceMap.values());
+  });
+
+  /**
+   * Extract unique projects from assignments and assign colors
+   * Projects with null colors get unique generated colors
+   */
+  const activeProjects = computed(() => {
+    const useMockData = props.content?.useMockData ?? false;
+
+    if (useMockData) {
+      return mockProjects;
+    }
+
+    const assignments = activeAssignments.value;
+    if (!assignments || assignments.length === 0) return [];
+
+    // Create a map to deduplicate projects
+    const projectMap = new Map();
+
+    assignments.forEach(assignment => {
+      const project = assignment.originalItem?.project;
+      if (!project?.id) return;
+
+      // Only add if not already in map
+      if (!projectMap.has(project.id)) {
+        projectMap.set(project.id, {
+          id: project.id,
+          name: project.title || project.name || 'Untitled Project',
+          color: project.color, // Can be null
+          status: project.status || 'planned',
+          originalItem: project,
+        });
+      }
+    });
+
+    const projects = Array.from(projectMap.values());
+
+    // Assign colors to projects (null colors get generated colors)
+    const colorMap = assignProjectColors(projects);
+
+    // Update projects with assigned colors
+    return projects.map(project => ({
+      ...project,
+      color: getProjectColor(project.id, colorMap),
+    }));
+  });
+
+  /**
+   * Get project color map for assignments
+   */
+  const projectColorMap = computed(() => {
+    const colorMap = new Map();
+    activeProjects.value.forEach(project => {
+      colorMap.set(project.id, project.color);
+    });
+    return colorMap;
+  });
+
+  /**
+   * Update assignments with resolved project colors
+   */
+  const assignmentsWithColors = computed(() => {
+    return activeAssignments.value.map(assignment => ({
+      ...assignment,
+      project: {
+        ...assignment.project,
+        color: getProjectColor(assignment.project_id, projectColorMap.value),
+      },
+    }));
   });
 
   /**
@@ -183,80 +303,11 @@ export function useTimelineData(props) {
     return weeks;
   });
 
-  /**
-   * Get resources - either from mock data or bound data
-   * Process with formula mappings for dynamic field resolution
-   */
-  const activeResources = computed(() => {
-    const useMockData = props.content?.useMockData ?? false;
-    const boundResources = props.content?.resources;
-
-    if (useMockData || !Array.isArray(boundResources) || boundResources.length === 0) {
-      return mockResources;
-    }
-
-    // Use formula mapping for dynamic field resolution
-    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
-
-    return boundResources.map(item => {
-      const id = resolveMappingFormula(props.content?.resourcesIdFormula, item) ?? item.id;
-      const name = resolveMappingFormula(props.content?.resourcesNameFormula, item) ?? item.name ?? `${item.first_name || ''} ${item.last_name || ''}`.trim();
-      const position = resolveMappingFormula(props.content?.resourcesPositionFormula, item) ?? item.position ?? item.title;
-      const avatar = resolveMappingFormula(props.content?.resourcesAvatarFormula, item) ?? item.avatar;
-
-      return {
-        id: id || `resource-${Date.now()}-${Math.random()}`,
-        name: name || 'Untitled Resource',
-        position: position || '',
-        avatar: avatar || '',
-        // Include original data for reference - allows access to ANY backend field
-        originalItem: item,
-      };
-    });
-  });
-
-  /**
-   * Get projects - either from mock data or bound data
-   * Process with formula mappings for dynamic field resolution
-   */
-  const activeProjects = computed(() => {
-    const useMockData = props.content?.useMockData ?? false;
-    const boundProjects = props.content?.projects;
-
-    if (useMockData || !Array.isArray(boundProjects) || boundProjects.length === 0) {
-      return mockProjects;
-    }
-
-    // Use formula mapping for dynamic field resolution
-    const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
-
-    return boundProjects.map(item => {
-      const id = resolveMappingFormula(props.content?.projectsIdFormula, item) ?? item.id;
-      const name = resolveMappingFormula(props.content?.projectsNameFormula, item) ?? item.name;
-      const color = resolveMappingFormula(props.content?.projectsColorFormula, item) ?? item.color ?? '#3b82f6';
-      const startTargetDate = resolveMappingFormula(props.content?.projectsStartDateFormula, item) ?? item.start_target_date ?? item.start_date;
-      const status = resolveMappingFormula(props.content?.projectsStatusFormula, item) ?? item.status ?? 'planned';
-
-      return {
-        id: id || `project-${Date.now()}-${Math.random()}`,
-        name: name || 'Untitled Project',
-        color: color,
-        start_target_date: startTargetDate,
-        number_of_sprints: item.number_of_sprints ?? 6,
-        sprint_duration_weeks: item.sprint_duration_weeks ?? 2,
-        status: status,
-        sprints: item.sprints ?? [],
-        // Include original data for reference
-        originalItem: item,
-      };
-    });
-  });
-
   return {
     timelineDays,
     timelineWeeks,
     activeResources,
     activeProjects,
-    activeAssignments,
+    activeAssignments: assignmentsWithColors, // Return assignments with resolved colors
   };
 }
