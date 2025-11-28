@@ -2,7 +2,7 @@
   <div class="timeline-header">
     <!-- Resource column header spanning both rows -->
     <div class="resource-column-header" :style="resourceColumnStyle">
-      <span class="header-title">{{ t.resources }}</span>
+      <!-- Empty header space -->
     </div>
 
     <!-- Right side with week numbers and days -->
