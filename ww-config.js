@@ -13,7 +13,7 @@ export default {
     items: {
       label: { en: "Timeline Items" },
       type: "Array",
-      section: "settings",
+      section: "data",
       bindable: true,
       defaultValue: [],
       options: {
@@ -66,7 +66,7 @@ export default {
     itemIdFormula: {
       label: { en: 'Item ID Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'item-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -87,7 +87,7 @@ export default {
     itemStartDateFormula: {
       label: { en: 'Start Date Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'item-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -108,7 +108,7 @@ export default {
     itemEndDateFormula: {
       label: { en: 'End Date Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'item-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -129,7 +129,7 @@ export default {
     showLoadPercentage: {
       label: { en: "Show Load/Utilization Text" },
       type: "OnOff",
-      section: "settings",
+      section: "item-mapping",
       defaultValue: true,
       bindable: true,
       /* wwEditor:start */
@@ -150,7 +150,7 @@ export default {
     itemLoadFormula: {
       label: { en: 'Load/Utilization Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'item-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -174,7 +174,7 @@ export default {
     rowIdFormula: {
       label: { en: 'Row ID Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'row-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -189,7 +189,7 @@ export default {
     rowTitleFormula: {
       label: { en: 'Row Title Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'row-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -204,7 +204,7 @@ export default {
     rowSubtitleFormula: {
       label: { en: 'Row Subtitle Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'row-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -219,7 +219,7 @@ export default {
     rowImageFormula: {
       label: { en: 'Row Image Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'row-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -237,7 +237,7 @@ export default {
     categoryIdFormula: {
       label: { en: 'Category ID Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'category-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -252,7 +252,7 @@ export default {
     categoryNameFormula: {
       label: { en: 'Category Name Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'category-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -267,7 +267,7 @@ export default {
     categoryColorFormula: {
       label: { en: 'Category Color Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'category-mapping',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -285,7 +285,7 @@ export default {
     exclusions: {
       label: { en: "Exclusion Periods" },
       type: "Array",
-      section: "settings",
+      section: "exclusion-mapping",
       bindable: true,
       defaultValue: [],
       options: {
@@ -322,7 +322,7 @@ export default {
     exclusionRowIdFormula: {
       label: { en: 'Exclusion Row/Resource ID Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'exclusion-mapping',
       options: content => ({
         template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
       }),
@@ -345,7 +345,7 @@ export default {
     exclusionStartDateFormula: {
       label: { en: 'Exclusion Start Date Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'exclusion-mapping',
       options: content => ({
         template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
       }),
@@ -365,7 +365,7 @@ export default {
     exclusionEndDateFormula: {
       label: { en: 'Exclusion End Date Field' },
       type: 'Formula',
-      section: 'settings',
+      section: 'exclusion-mapping',
       options: content => ({
         template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
       }),
