@@ -1,16 +1,16 @@
 <template>
-  <div class="resource-planning-timeline" :style="containerStyle">
+  <div class="timeline-planning" :style="containerStyle">
     <!-- Timeline Header -->
     <TimelineHeader
       ref="headerComponent"
       :days="timelineDays"
       :weeks="timelineWeeks"
-      :resource-column-style="resourceColumnStyle"
+      :row-column-style="rowColumnStyle"
       :day-column-style="dayColumnStyle"
       :days-container-style="daysContainerStyle"
     />
 
-    <!-- Resource Rows -->
+    <!-- Timeline Rows -->
     <div
       ref="bodyScrollRef"
       class="timeline-body"
@@ -20,54 +20,56 @@
       @mouseup="handleMouseUp"
       @mouseleave="handleMouseLeave"
     >
-      <ResourceRow
-        v-for="resource in activeResources"
-        :key="resource.id"
-        :resource="resource"
+      <TimelineRow
+        v-for="row in activeRows"
+        :key="row.id"
+        :row="row"
         :days="timelineDays"
-        :assignments="getResourceAssignments(resource.id)"
-        :row-style="getResourceRowStyle(resource.id)"
-        :resource-column-style="resourceColumnStyle"
+        :items="getRowItems(row.id)"
+        :row-style="getRowStyle(row.id)"
+        :row-column-style="rowColumnStyle"
         :day-column-style="dayColumnStyle"
         :days-container-style="daysContainerStyle"
-        :get-day-capacity-info="getDayCapacityInfo"
-        :get-assignment-bar-style="getAssignmentBarStyle"
-        @resource-click="handleResourceClick"
-        @assignment-click="handleAssignmentClick"
+        :get-day-load-info="getDayLoadInfo"
+        :get-item-bar-style="getItemBarStyle"
+        :show-load-percentage="content?.showLoadPercentage ?? true"
+        @row-click="handleRowClick"
+        @item-click="handleItemClick"
         @show-tooltip="showTooltip"
         @hide-tooltip="hideTooltip"
       />
 
       <!-- Empty State -->
-      <div v-if="activeResources.length === 0" class="empty-state" :style="emptyStateStyle">
-        <p>No resources to display.</p>
-        <p v-if="!content?.useMockData" class="hint">
-          Enable "Use Mock Data" in settings or bind resource data.
+      <div v-if="activeRows.length === 0" class="empty-state" :style="emptyStateStyle">
+        <p>No data to display.</p>
+        <p class="hint">
+          Please bind your timeline items data in the component settings.
         </p>
       </div>
     </div>
 
     <!-- Tooltip -->
-    <AssignmentTooltip
+    <ItemTooltip
       :visible="tooltip.visible"
       :data="tooltip.data"
       :tooltip-style="tooltipStyle"
+      :show-load-percentage="content?.showLoadPercentage ?? true"
     />
   </div>
 </template>
 
 <script>
 import { ref } from 'vue';
-import { useResourcePlanning } from './composables/useResourcePlanning';
+import { useTimelinePlanning } from './composables/useTimelinePlanning';
 import TimelineHeader from './components/TimelineHeader.vue';
-import ResourceRow from './components/ResourceRow.vue';
-import AssignmentTooltip from './components/AssignmentTooltip.vue';
+import TimelineRow from './components/TimelineRow.vue';
+import ItemTooltip from './components/ItemTooltip.vue';
 
 export default {
   components: {
     TimelineHeader,
-    ResourceRow,
-    AssignmentTooltip,
+    TimelineRow,
+    ItemTooltip,
   },
   props: {
     content: { type: Object, required: true },
@@ -79,7 +81,7 @@ export default {
   emits: ['trigger-event'],
   setup(props, { emit }) {
     // Use the main composable for all business logic
-    const planning = useResourcePlanning(props, emit);
+    const planning = useTimelinePlanning(props, emit);
 
     // Scroll sync between header and body
     const headerComponent = ref(null);
@@ -144,27 +146,26 @@ export default {
 
     // Return everything needed by the template
     return {
-      // Data
-      activeResources: planning.activeResources,
+      // Data (new generic names)
+      activeRows: planning.activeRows,
       timelineDays: planning.timelineDays,
       timelineWeeks: planning.timelineWeeks,
       tooltip: planning.tooltip,
 
-      // Functions
-      getResourceAssignments: planning.getResourceAssignments,
-      getResourceLaneCount: planning.getResourceLaneCount,
-      getRemainingCapacity: planning.getRemainingCapacity,
-      getDayCapacityInfo: planning.getDayCapacityInfo,
-      getResourceRowStyle: planning.getResourceRowStyle,
-      getAssignmentBarStyle: planning.getAssignmentBarStyle,
-      handleResourceClick: planning.handleResourceClick,
-      handleAssignmentClick: planning.handleAssignmentClick,
+      // Functions (new generic names)
+      getRowItems: planning.getRowItems,
+      getRowLaneCount: planning.getRowLaneCount,
+      getDayLoadInfo: planning.getDayLoadInfo,
+      getRowStyle: planning.getRowStyle,
+      getItemBarStyle: planning.getItemBarStyle,
+      handleRowClick: planning.handleRowClick,
+      handleItemClick: planning.handleItemClick,
       showTooltip: planning.showTooltip,
       hideTooltip: planning.hideTooltip,
 
-      // Styles
+      // Styles (new generic names)
       containerStyle: planning.containerStyle,
-      resourceColumnStyle: planning.resourceColumnStyle,
+      rowColumnStyle: planning.rowColumnStyle,
       dayColumnStyle: planning.dayColumnStyle,
       daysContainerStyle: planning.daysContainerStyle,
       emptyStateStyle: planning.emptyStateStyle,
@@ -186,7 +187,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.resource-planning-timeline {
+.timeline-planning {
   font-family: system-ui, -apple-system, sans-serif;
   background: var(--bg-color);
   color: var(--text-color);

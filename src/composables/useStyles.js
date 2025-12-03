@@ -14,9 +14,9 @@ import {
 
 /**
  * Composable for style calculations
- * Handles all CSS and style computations
+ * Handles all CSS and style computations (generic for any timeline)
  */
-export function useStyles(props, timelineDays, getResourceLaneCount) {
+export function useStyles(props, timelineDays, getRowLaneCount) {
   /**
    * Main container styles
    */
@@ -29,9 +29,9 @@ export function useStyles(props, timelineDays, getResourceLaneCount) {
   }));
 
   /**
-   * Resource column (left sticky column) styles
+   * Row column (left sticky column) styles
    */
-  const resourceColumnStyle = computed(() => ({
+  const rowColumnStyle = computed(() => ({
     width: props.content?.resourceColumnWidth || DEFAULT_RESOURCE_WIDTH,
     minWidth: props.content?.resourceColumnWidth || DEFAULT_RESOURCE_WIDTH,
   }));
@@ -59,19 +59,19 @@ export function useStyles(props, timelineDays, getResourceLaneCount) {
   });
 
   /**
-   * Empty state (no resources) styles
+   * Empty state (no rows) styles
    */
   const emptyStateStyle = computed(() => ({
     minHeight: '200px',
   }));
 
   /**
-   * Resource row styles with dynamic height based on lane count
-   * @param {string} resourceId - The resource ID
-   * @returns {Object} Style object for the resource row
+   * Row styles with dynamic height based on lane count
+   * @param {string} rowId - The row ID
+   * @returns {Object} Style object for the row
    */
-  const getResourceRowStyle = (resourceId) => {
-    const laneCount = getResourceLaneCount(resourceId);
+  const getRowStyle = (rowId) => {
+    const laneCount = getRowLaneCount(rowId);
     const calculatedHeight = laneCount * LANE_HEIGHT + ROW_PADDING + ROW_FOOTER_HEIGHT;
     const height = Math.max(MIN_ROW_HEIGHT, calculatedHeight);
 
@@ -83,10 +83,13 @@ export function useStyles(props, timelineDays, getResourceLaneCount) {
 
   return {
     containerStyle,
-    resourceColumnStyle,
+    rowColumnStyle,
     dayColumnStyle,
     daysContainerStyle,
     emptyStateStyle,
-    getResourceRowStyle,
+    getRowStyle,
+    // Legacy exports for backwards compatibility
+    resourceColumnStyle: rowColumnStyle,
+    getResourceRowStyle: getRowStyle,
   };
 }

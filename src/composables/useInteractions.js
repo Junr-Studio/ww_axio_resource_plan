@@ -2,7 +2,7 @@ import { reactive, computed } from 'vue';
 
 /**
  * Composable for user interactions
- * Handles click events and tooltip management
+ * Handles click events and tooltip management (generic for any timeline)
  */
 export function useInteractions(emit) {
   /**
@@ -24,35 +24,51 @@ export function useInteractions(emit) {
   }));
 
   /**
-   * Handle resource click event
-   * @param {Object} resource - The clicked resource
+   * Handle row click event
+   * @param {Object} row - The clicked row entity
    */
-  const handleResourceClick = (resource) => {
+  const handleRowClick = (row) => {
     emit('trigger-event', {
-      name: 'resource-click',
-      event: { resource },
+      name: 'row-clicked',
+      event: {
+        rowId: row.id,
+        row,
+        // Legacy compatibility
+        resourceId: row.id,
+        resource: row,
+      },
     });
   };
 
   /**
-   * Handle assignment click event
-   * @param {Object} assignment - The clicked assignment
+   * Handle item click event
+   * @param {Object} item - The clicked item
    */
-  const handleAssignmentClick = (assignment) => {
+  const handleItemClick = (item) => {
     emit('trigger-event', {
-      name: 'assignment-click',
-      event: { assignment },
+      name: 'item-clicked',
+      event: {
+        itemId: item.id,
+        rowId: item.row_id || item.resource_id,
+        categoryId: item.category_id || item.project_id,
+        item,
+        // Legacy compatibility
+        assignmentId: item.id,
+        resourceId: item.row_id || item.resource_id,
+        projectId: item.category_id || item.project_id,
+        assignment: item,
+      },
     });
   };
 
   /**
-   * Show tooltip for an assignment
-   * @param {Object} assignment - The assignment data
+   * Show tooltip for an item
+   * @param {Object} item - The item data
    * @param {MouseEvent} event - The mouse event
    */
-  const showTooltip = (assignment, event) => {
+  const showTooltip = (item, event) => {
     tooltip.visible = true;
-    tooltip.data = assignment;
+    tooltip.data = item;
     tooltip.x = event.clientX + 10;
     tooltip.y = event.clientY + 10;
   };
@@ -68,9 +84,12 @@ export function useInteractions(emit) {
   return {
     tooltip,
     tooltipStyle,
-    handleResourceClick,
-    handleAssignmentClick,
+    handleRowClick,
+    handleItemClick,
     showTooltip,
     hideTooltip,
+    // Legacy exports for backwards compatibility
+    handleResourceClick: handleRowClick,
+    handleAssignmentClick: handleItemClick,
   };
 }

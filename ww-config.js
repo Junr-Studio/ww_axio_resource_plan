@@ -1,14 +1,14 @@
 export default {
   editor: {
     label: {
-      en: "Resource Planning Timeline",
+      en: "Timeline Planning Component",
     },
     icon: "calendar",
   },
   properties: {
     // Data Properties
-    assignments: {
-      label: { en: "Assignments (Joined Data)" },
+    items: {
+      label: { en: "Timeline Items" },
       type: "Array",
       section: "settings",
       bindable: true,
@@ -16,31 +16,31 @@ export default {
       options: {
         expandable: true,
         getItemLabel(item) {
-          const resourceName = item?.resource?.first_name && item?.resource?.last_name
-            ? `${item?.resource?.first_name} ${item?.resource?.last_name}`
-            : item?.resource?.name || 'Resource';
-          const projectName = item?.project?.title || item?.project?.name || 'Project';
-          return `${resourceName} → ${projectName}`;
+          const rowName = item?.row?.first_name && item?.row?.last_name
+            ? `${item?.row?.first_name} ${item?.row?.last_name}`
+            : item?.row?.name || 'Row';
+          const categoryName = item?.category?.title || item?.category?.name || 'Category';
+          return `${rowName} → ${categoryName}`;
         },
         item: {
           type: "Object",
           defaultValue: {
             id: "",
-            assignement_start_date: "",
-            assignement_end_date: "",
-            assigned_capacity: "1",
-            resource: {
+            start_date: "",
+            end_date: "",
+            load: "1",
+            row: {
               id: "",
               first_name: "",
               last_name: "",
-              title: "",
+              subtitle: "",
               avatar: ""
             },
-            project: {
+            category: {
               id: "",
-              title: "",
+              name: "",
               color: null,
-              status: ""
+              metadata: ""
             }
           },
         },
@@ -48,331 +48,222 @@ export default {
       /* wwEditor:start */
       bindingValidation: {
         type: "array",
-        tooltip: "Array of assignments with nested resource and project objects",
+        tooltip: "Array of timeline items with nested row and category objects",
       },
       propertyHelp: {
-        en: "Bind your assignments data with nested resource and project objects. Each assignment should include full resource details (id, first_name, last_name, title, avatar) and project details (id, title, color, status). Colors are auto-generated for projects with null colors.",
+        en: "Bind your timeline items with nested row and category objects. Each item should include row details (id, first_name, last_name, subtitle, avatar) and category details (id, name, color, metadata). Colors are auto-generated for categories with null colors. Use cases: resource planning (rows=people, categories=projects), room booking (rows=rooms, categories=events), equipment schedule (rows=machines, categories=jobs), etc.",
       },
       /* wwEditor:end */
     },
 
     // Formula properties for flexible field mapping
-    // Assignment-level fields
-    assignmentIdFormula: {
-      label: { en: 'Assignment ID Field' },
+    // Item-level fields
+    itemIdFormula: {
+      label: { en: 'Item ID Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
         code: "context.mapping?.['id']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
-        tooltip: 'Field to use as assignment ID',
+        tooltip: 'Field to use as item ID',
       },
       /* wwEditor:end */
     },
 
-    assignmentStartDateFormula: {
+    itemStartDateFormula: {
       label: { en: 'Start Date Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['assignement_start_date'] || context.mapping?.['start_date']",
+        code: "context.mapping?.['start_date'] || context.mapping?.['assignement_start_date']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
-        tooltip: 'Field containing assignment start date',
+        tooltip: 'Field containing item start date',
       },
       /* wwEditor:end */
     },
 
-    assignmentEndDateFormula: {
+    itemEndDateFormula: {
       label: { en: 'End Date Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['assignement_end_date'] || context.mapping?.['end_date']",
+        code: "context.mapping?.['end_date'] || context.mapping?.['assignement_end_date']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
-        tooltip: 'Field containing assignment end date',
+        tooltip: 'Field containing item end date',
       },
       /* wwEditor:end */
     },
 
-    assignmentCapacityFormula: {
-      label: { en: 'Capacity Field' },
+    showLoadPercentage: {
+      label: { en: "Show Load/Utilization Text" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "boolean",
+        tooltip: "Show or hide load/utilization percentage text",
+      },
+      propertyHelp: {
+        en: "Toggle ON to display load percentage numbers in item bars and tooltips. Toggle OFF to hide the text while keeping visual capacity indicators (colored footers and lane usage).",
+      },
+      /* wwEditor:end */
+    },
+
+    itemLoadFormula: {
+      label: { en: 'Load/Utilization Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['assigned_capacity'] || context.mapping?.['capacity_percentage'] || context.mapping?.['capacity'] || 1",
+        code: "context.mapping?.['load'] || context.mapping?.['assigned_capacity'] || context.mapping?.['capacity_percentage'] || context.mapping?.['capacity'] || 1",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items || !content?.showLoadPercentage,
       /* wwEditor:start */
       bindingValidation: {
         type: 'number',
-        tooltip: 'Field containing capacity (decimal 0-1 or percentage 0-100)',
+        tooltip: 'Field containing load/utilization (decimal 0-1 or percentage 0-100)',
       },
       /* wwEditor:end */
     },
 
-    // Resource nested object fields
-    resourceObjectPath: {
-      label: { en: 'Resource Object Path' },
+    // Row object field mappings
+    rowIdFormula: {
+      label: { en: 'Row ID Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['resource']",
+        code: "context.mapping?.['row']?.['id'] || context.mapping?.['resource']?.['id']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'object',
-        tooltip: 'Nested resource object',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    resourceIdFormula: {
-      label: { en: 'Resource ID Field' },
+    rowTitleFormula: {
+      label: { en: 'Row Title Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['id']",
+        code: "context.mapping?.['row']?.['name'] || context.mapping?.['resource']?.['name'] || context.mapping?.['row']?.['title'] || context.mapping?.['resource']?.['title']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in resource object for ID',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    resourceFirstNameFormula: {
-      label: { en: 'Resource First Name Field' },
+    rowSubtitleFormula: {
+      label: { en: 'Row Subtitle Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['first_name'] || context.mapping?.['firstName']",
+        code: "context.mapping?.['row']?.['subtitle'] || context.mapping?.['resource']?.['subtitle'] || context.mapping?.['row']?.['position'] || context.mapping?.['resource']?.['position']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in resource object for first name',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    resourceLastNameFormula: {
-      label: { en: 'Resource Last Name Field' },
+    rowImageFormula: {
+      label: { en: 'Row Image Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['last_name'] || context.mapping?.['lastName']",
+        code: "context.mapping?.['row']?.['image'] || context.mapping?.['resource']?.['image'] || context.mapping?.['row']?.['avatar'] || context.mapping?.['resource']?.['avatar']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in resource object for last name',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    resourceTitleFormula: {
-      label: { en: 'Resource Title/Position Field' },
+    // Category object field mappings
+    categoryIdFormula: {
+      label: { en: 'Category ID Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['title'] || context.mapping?.['position']",
+        code: "context.mapping?.['category']?.['id'] || context.mapping?.['project']?.['id']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in resource object for title/position',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    resourceAvatarFormula: {
-      label: { en: 'Resource Avatar Field' },
+    categoryNameFormula: {
+      label: { en: 'Category Name Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.resource : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['avatar']",
+        code: "context.mapping?.['category']?.['name'] || context.mapping?.['project']?.['name'] || context.mapping?.['category']?.['title'] || context.mapping?.['project']?.['title']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in resource object for avatar URL',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    // Project nested object fields
-    projectObjectPath: {
-      label: { en: 'Project Object Path' },
+    categoryColorFormula: {
+      label: { en: 'Category Color Field' },
       type: 'Formula',
       section: 'settings',
       options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0] : null,
+        template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['project']",
+        code: "context.mapping?.['category']?.['color'] || context.mapping?.['project']?.['color']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'object',
-        tooltip: 'Nested project object',
-      },
-      /* wwEditor:end */
-    },
-
-    projectIdFormula: {
-      label: { en: 'Project ID Field' },
-      type: 'Formula',
-      section: 'settings',
-      options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
-      }),
-      defaultValue: {
-        type: 'f',
-        code: "context.mapping?.['id']",
-      },
-      hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in project object for ID',
-      },
-      /* wwEditor:end */
-    },
-
-    projectNameFormula: {
-      label: { en: 'Project Name Field' },
-      type: 'Formula',
-      section: 'settings',
-      options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
-      }),
-      defaultValue: {
-        type: 'f',
-        code: "context.mapping?.['title'] || context.mapping?.['name']",
-      },
-      hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in project object for name/title',
-      },
-      /* wwEditor:end */
-    },
-
-    projectColorFormula: {
-      label: { en: 'Project Color Field' },
-      type: 'Formula',
-      section: 'settings',
-      options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
-      }),
-      defaultValue: {
-        type: 'f',
-        code: "context.mapping?.['color']",
-      },
-      hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in project object for color (null = auto-generated)',
-      },
-      /* wwEditor:end */
-    },
-
-    projectStatusFormula: {
-      label: { en: 'Project Status Field' },
-      type: 'Formula',
-      section: 'settings',
-      options: content => ({
-        template: Array.isArray(content.assignments) && content.assignments.length > 0 ? content.assignments[0]?.project : null,
-      }),
-      defaultValue: {
-        type: 'f',
-        code: "context.mapping?.['status']",
-      },
-      hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.assignments) || !content.assignments?.length || !boundProps.assignments,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Field in project object for status',
-      },
-      /* wwEditor:end */
+        !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
     // Timeline Settings
@@ -385,10 +276,10 @@ export default {
       /* wwEditor:start */
       bindingValidation: {
         type: "boolean",
-        tooltip: "Enable to manually set the number of days. Disable for automatic calculation based on assignments.",
+        tooltip: "Enable to manually set the number of days. Disable for automatic calculation based on items.",
       },
       propertyHelp: {
-        en: "Toggle ON to manually set the timeline length. Toggle OFF to automatically calculate based on your assignments (latest end date + 7 days buffer).",
+        en: "Toggle ON to manually set the timeline length. Toggle OFF to automatically calculate based on your items (latest end date + 7 days buffer).",
       },
       /* wwEditor:end */
     },
@@ -411,22 +302,6 @@ export default {
       /* wwEditor:end */
     },
 
-    useMockData: {
-      label: { en: "Use Mock Data" },
-      type: "OnOff",
-      section: "settings",
-      defaultValue: false,
-      /* wwEditor:start */
-      bindingValidation: {
-        type: "boolean",
-        tooltip: "Enable to use built-in mock data for testing",
-      },
-      propertyHelp: {
-        en: "Toggle ON to use built-in mock data while testing. Toggle OFF to use bound data from WeWeb.",
-      },
-      /* wwEditor:end */
-    },
-
     // Visual Settings
     rowHeight: {
       label: { en: "Row Height" },
@@ -444,42 +319,42 @@ export default {
       bindable: true,
     },
 
-    // Capacity Status Colors
-    colorAvailable: {
-      label: { en: "Available Color (Green)" },
+    // Load Status Colors
+    colorLowLoad: {
+      label: { en: "Low Load Color (Green)" },
       type: "Color",
       section: "style",
       defaultValue: "#10b981",
       bindable: true,
       /* wwEditor:start */
       propertyHelp: {
-        en: "Border color for assignments when resource has <80% capacity",
+        en: "Border color for items when row has <80% load",
       },
       /* wwEditor:end */
     },
 
-    colorNearFull: {
-      label: { en: "Near Full Color (Yellow)" },
+    colorMediumLoad: {
+      label: { en: "Medium Load Color (Yellow)" },
       type: "Color",
       section: "style",
       defaultValue: "#f59e0b",
       bindable: true,
       /* wwEditor:start */
       propertyHelp: {
-        en: "Border color for assignments when resource has 80-100% capacity",
+        en: "Border color for items when row has 80-100% load",
       },
       /* wwEditor:end */
     },
 
-    colorOverCapacity: {
-      label: { en: "Over Capacity Color (Red)" },
+    colorHighLoad: {
+      label: { en: "High Load Color (Red)" },
       type: "Color",
       section: "style",
       defaultValue: "#ef4444",
       bindable: true,
       /* wwEditor:start */
       propertyHelp: {
-        en: "Border color for assignments when resource has >100% capacity",
+        en: "Border color for items when row has >100% load",
       },
       /* wwEditor:end */
     },
@@ -520,21 +395,21 @@ export default {
 
   triggerEvents: [
     {
-      name: "assignment-clicked",
-      label: { en: "Assignment clicked" },
+      name: "item-clicked",
+      label: { en: "Item clicked" },
       event: {
-        assignmentId: "",
-        resourceId: "",
-        projectId: "",
-        assignment: {},
+        itemId: "",
+        rowId: "",
+        categoryId: "",
+        item: {},
       },
     },
     {
-      name: "resource-clicked",
-      label: { en: "Resource clicked" },
+      name: "row-clicked",
+      label: { en: "Row clicked" },
       event: {
-        resourceId: "",
-        resource: {},
+        rowId: "",
+        row: {},
       },
     },
   ],

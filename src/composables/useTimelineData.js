@@ -1,79 +1,95 @@
 import { computed } from 'vue';
 import { addDays, format, getISOWeek, getYear, differenceInDays, parseISO, max } from 'date-fns';
-import { mockResources, mockProjects, mockAssignments } from '../mockData';
 import { DEFAULT_NUMBER_OF_DAYS } from '../utils/constants';
 import { assignProjectColors, getProjectColor } from '../utils/colorHelpers';
 import { useLocale } from './useLocale';
 
 /**
  * Composable for timeline data management
- * Handles joined assignments data with nested resource/project objects
+ * Handles items data with nested row/category objects
+ * Generic structure works for: resource planning, room booking, equipment scheduling, etc.
  */
 export function useTimelineData(props) {
   // Get locale for internationalization
   const { dateFnsLocale } = useLocale();
-  /**
-   * Get assignments - either from mock data or bound data
-   * Now expects assignments with nested resource and project objects
-   */
-  const activeAssignments = computed(() => {
-    const useMockData = props.content?.useMockData ?? false;
-    const boundAssignments = props.content?.assignments;
 
-    if (useMockData || !Array.isArray(boundAssignments) || boundAssignments.length === 0) {
-      return mockAssignments;
+  /**
+   * Get items from bound data
+   * Expects items with nested row and category objects
+   */
+  const activeItems = computed(() => {
+    const boundItems = props.content?.items;
+
+    if (!Array.isArray(boundItems) || boundItems.length === 0) {
+      return [];
     }
 
     // Use formula mapping for dynamic field resolution
     const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
 
-    return boundAssignments.map(item => {
-      // Resolve assignment-level fields
-      const assignmentId = resolveMappingFormula(props.content?.assignmentIdFormula, item) ?? item.id;
-      const startDate = resolveMappingFormula(props.content?.assignmentStartDateFormula, item) ?? item.assignement_start_date ?? item.start_date ?? '';
-      const endDate = resolveMappingFormula(props.content?.assignmentEndDateFormula, item) ?? item.assignement_end_date ?? item.end_date ?? '';
-      const capacityRaw = resolveMappingFormula(props.content?.assignmentCapacityFormula, item) ?? item.assigned_capacity ?? item.capacity_percentage ?? item.capacity ?? 1;
+    return boundItems.map(item => {
+      // Resolve item-level fields
+      const itemId = resolveMappingFormula(props.content?.itemIdFormula, item) ?? item.id;
+      const startDate = resolveMappingFormula(props.content?.itemStartDateFormula, item) ?? item.start_date ?? item.assignement_start_date ?? '';
+      const endDate = resolveMappingFormula(props.content?.itemEndDateFormula, item) ?? item.end_date ?? item.assignement_end_date ?? '';
+      const loadRaw = resolveMappingFormula(props.content?.itemLoadFormula, item) ?? item.load ?? item.assigned_capacity ?? item.capacity_percentage ?? item.capacity ?? 1;
 
-      // Resolve nested resource object and its fields
-      const resourceObj = resolveMappingFormula(props.content?.resourceObjectPath, item) ?? item.resource ?? {};
-      const resourceId = resolveMappingFormula(props.content?.resourceIdFormula, resourceObj) ?? resourceObj.id ?? item.resource_id ?? `resource-${Date.now()}-${Math.random()}`;
-      const resourceFirstName = resolveMappingFormula(props.content?.resourceFirstNameFormula, resourceObj) ?? resourceObj.first_name ?? resourceObj.firstName ?? '';
-      const resourceLastName = resolveMappingFormula(props.content?.resourceLastNameFormula, resourceObj) ?? resourceObj.last_name ?? resourceObj.lastName ?? '';
-      const resourceTitle = resolveMappingFormula(props.content?.resourceTitleFormula, resourceObj) ?? resourceObj.title ?? resourceObj.position ?? '';
-      const resourceAvatar = resolveMappingFormula(props.content?.resourceAvatarFormula, resourceObj) ?? resourceObj.avatar ?? '';
+      // Resolve row fields directly from item (formulas now contain full paths)
+      const rowObj = item.row ?? item.resource ?? {};
+      const rowId = resolveMappingFormula(props.content?.rowIdFormula, item) ?? rowObj.id ?? item.row_id ?? item.resource_id ?? `row-${Date.now()}-${Math.random()}`;
 
-      // Resolve nested project object and its fields
-      const projectObj = resolveMappingFormula(props.content?.projectObjectPath, item) ?? item.project ?? {};
-      const projectId = resolveMappingFormula(props.content?.projectIdFormula, projectObj) ?? projectObj.id ?? item.project_id ?? `project-${Date.now()}-${Math.random()}`;
-      const projectName = resolveMappingFormula(props.content?.projectNameFormula, projectObj) ?? projectObj.title ?? projectObj.name ?? 'Untitled Project';
-      const projectColor = resolveMappingFormula(props.content?.projectColorFormula, projectObj) ?? projectObj.color;
-      const projectStatus = resolveMappingFormula(props.content?.projectStatusFormula, projectObj) ?? projectObj.status ?? 'planned';
+      // Title: try formula first, then fallback to name, title, or combine firstName + lastName for backwards compatibility
+      const rowTitle = (resolveMappingFormula(props.content?.rowTitleFormula, item)
+        ?? rowObj.name
+        ?? rowObj.title
+        ?? (rowObj.first_name || rowObj.firstName ? `${rowObj.first_name || rowObj.firstName} ${rowObj.last_name || rowObj.lastName || ''}`.trim() : ''))
+        || 'Untitled Row';
 
-      // Convert capacity: if decimal (0-1), multiply by 100; if already percentage (0-100), use as-is
-      const capacityNum = Number(capacityRaw);
-      const capacity = capacityNum <= 1 ? capacityNum * 100 : capacityNum;
+      const rowSubtitle = resolveMappingFormula(props.content?.rowSubtitleFormula, item) ?? rowObj.subtitle ?? rowObj.position ?? '';
+      const rowImage = resolveMappingFormula(props.content?.rowImageFormula, item) ?? rowObj.image ?? rowObj.avatar ?? '';
+
+      // Resolve category fields directly from item (formulas now contain full paths)
+      const categoryObj = item.category ?? item.project ?? {};
+      const categoryId = resolveMappingFormula(props.content?.categoryIdFormula, item) ?? categoryObj.id ?? item.category_id ?? item.project_id ?? `category-${Date.now()}-${Math.random()}`;
+      const categoryName = resolveMappingFormula(props.content?.categoryNameFormula, item) ?? categoryObj.name ?? categoryObj.title ?? 'Untitled Category';
+      const categoryColor = resolveMappingFormula(props.content?.categoryColorFormula, item) ?? categoryObj.color;
+
+      // Convert load: if decimal (0-1), multiply by 100; if already percentage (0-100), use as-is
+      const loadNum = Number(loadRaw);
+      const load = loadNum <= 1 ? loadNum * 100 : loadNum;
 
       return {
-        id: assignmentId || `assignment-${Date.now()}-${Math.random()}`,
-        resource_id: resourceId,
-        project_id: projectId,
+        id: itemId || `item-${Date.now()}-${Math.random()}`,
+        row_id: rowId,
+        category_id: categoryId,
         start_date: startDate,
         end_date: endDate,
-        capacity_percentage: capacity || 100,
-        // Keep project data for display (color will be assigned later)
+        load_percentage: load || 100,
+        // Legacy compatibility: keep as capacity_percentage and project_id/resource_id
+        capacity_percentage: load || 100,
+        project_id: categoryId,
+        resource_id: rowId,
+        // Keep category data for display (color will be assigned later)
         project: {
-          id: projectId,
-          name: projectName,
-          color: projectColor, // Can be null, will be assigned later
-          status: projectStatus,
+          id: categoryId,
+          name: categoryName,
+          color: categoryColor, // Can be null, will be assigned later
         },
-        // Store resolved resource data for extraction
-        __resolvedResource: {
-          id: resourceId,
-          first_name: resourceFirstName,
-          last_name: resourceLastName,
-          title: resourceTitle,
-          avatar: resourceAvatar,
+        category: {
+          id: categoryId,
+          name: categoryName,
+          color: categoryColor,
+        },
+        // Store resolved row data for extraction
+        __resolvedRow: {
+          id: rowId,
+          name: rowTitle,
+          subtitle: rowSubtitle,
+          image: rowImage,
+          // Legacy compatibility
+          first_name: rowObj.first_name || rowObj.firstName || '',
+          last_name: rowObj.last_name || rowObj.lastName || '',
+          avatar: rowImage,
         },
         // Include original nested data for reference
         originalItem: item,
@@ -82,148 +98,137 @@ export function useTimelineData(props) {
   });
 
   /**
-   * Extract unique resources from assignments
-   * Creates resource rows for the timeline
-   * Uses formula-resolved resource data
+   * Extract unique rows from items
+   * Creates row entries for the timeline
+   * Uses formula-resolved row data
    */
-  const activeResources = computed(() => {
-    const useMockData = props.content?.useMockData ?? false;
+  const activeRows = computed(() => {
+    const items = activeItems.value;
+    if (!items || items.length === 0) return [];
 
-    if (useMockData) {
-      return mockResources;
-    }
+    // Create a map to deduplicate rows
+    const rowMap = new Map();
 
-    const assignments = activeAssignments.value;
-    if (!assignments || assignments.length === 0) return [];
-
-    // Create a map to deduplicate resources
-    const resourceMap = new Map();
-
-    assignments.forEach(assignment => {
-      const resource = assignment.__resolvedResource;
-      if (!resource?.id) return;
+    items.forEach(item => {
+      const row = item.__resolvedRow;
+      if (!row?.id) return;
 
       // Only add if not already in map
-      if (!resourceMap.has(resource.id)) {
-        const name = `${resource.first_name || ''} ${resource.last_name || ''}`.trim() || resource.name || 'Untitled Resource';
-
-        resourceMap.set(resource.id, {
-          id: resource.id,
-          name: name,
-          position: resource.title || resource.position || '',
-          avatar: resource.avatar || '',
-          originalItem: resource,
+      if (!rowMap.has(row.id)) {
+        rowMap.set(row.id, {
+          id: row.id,
+          name: row.name || 'Untitled Row',
+          position: row.subtitle || '',
+          avatar: row.image || row.avatar || '', // Keep avatar for backwards compatibility
+          originalItem: row,
         });
       }
     });
 
-    return Array.from(resourceMap.values());
+    return Array.from(rowMap.values());
   });
 
   /**
-   * Extract unique projects from assignments and assign colors
-   * Projects with null colors get unique generated colors
-   * Uses formula-resolved project data
+   * Extract unique categories from items and assign colors
+   * Categories with null colors get unique generated colors
+   * Uses formula-resolved category data
    */
-  const activeProjects = computed(() => {
-    const useMockData = props.content?.useMockData ?? false;
+  const activeCategories = computed(() => {
+    const items = activeItems.value;
+    if (!items || items.length === 0) return [];
 
-    if (useMockData) {
-      return mockProjects;
-    }
+    // Create a map to deduplicate categories
+    const categoryMap = new Map();
 
-    const assignments = activeAssignments.value;
-    if (!assignments || assignments.length === 0) return [];
-
-    // Create a map to deduplicate projects
-    const projectMap = new Map();
-
-    assignments.forEach(assignment => {
-      const project = assignment.project; // Use formula-resolved project data
-      if (!project?.id) return;
+    items.forEach(item => {
+      const category = item.category ?? item.project; // Use formula-resolved category data
+      if (!category?.id) return;
 
       // Only add if not already in map
-      if (!projectMap.has(project.id)) {
-        projectMap.set(project.id, {
-          id: project.id,
-          name: project.name || 'Untitled Project',
-          color: project.color, // Can be null
-          status: project.status || 'planned',
-          originalItem: assignment.originalItem?.project,
+      if (!categoryMap.has(category.id)) {
+        categoryMap.set(category.id, {
+          id: category.id,
+          name: category.name || 'Untitled Category',
+          color: category.color, // Can be null
+          originalItem: item.originalItem?.category ?? item.originalItem?.project,
         });
       }
     });
 
-    const projects = Array.from(projectMap.values());
+    const categories = Array.from(categoryMap.values());
 
-    // Assign colors to projects (null colors get generated colors)
-    const colorMap = assignProjectColors(projects);
+    // Assign colors to categories (null colors get generated colors)
+    const colorMap = assignProjectColors(categories);
 
-    // Update projects with assigned colors
-    return projects.map(project => ({
-      ...project,
-      color: getProjectColor(project.id, colorMap),
+    // Update categories with assigned colors
+    return categories.map(category => ({
+      ...category,
+      color: getProjectColor(category.id, colorMap),
     }));
   });
 
   /**
-   * Get project color map for assignments
+   * Get category color map for items
    */
-  const projectColorMap = computed(() => {
+  const categoryColorMap = computed(() => {
     const colorMap = new Map();
-    activeProjects.value.forEach(project => {
-      colorMap.set(project.id, project.color);
+    activeCategories.value.forEach(category => {
+      colorMap.set(category.id, category.color);
     });
     return colorMap;
   });
 
   /**
-   * Update assignments with resolved project colors
+   * Update items with resolved category colors
    */
-  const assignmentsWithColors = computed(() => {
-    return activeAssignments.value.map(assignment => ({
-      ...assignment,
+  const itemsWithColors = computed(() => {
+    return activeItems.value.map(item => ({
+      ...item,
       project: {
-        ...assignment.project,
-        color: getProjectColor(assignment.project_id, projectColorMap.value),
+        ...item.project,
+        color: getProjectColor(item.project_id, categoryColorMap.value),
+      },
+      category: {
+        ...item.category,
+        color: getProjectColor(item.category_id, categoryColorMap.value),
       },
     }));
   });
 
   /**
-   * Calculate the number of days needed to show all assignments
-   * Returns the number of days from today to the last assignment's end date
+   * Calculate the number of days needed to show all items
+   * Returns the number of days from today to the last item's end date
    */
   const calculateRequiredDays = () => {
-    const assignments = activeAssignments.value;
+    const items = activeItems.value;
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     console.log('📊 Calculating required days:', {
-      assignmentCount: assignments?.length,
+      itemCount: items?.length,
       startDate: format(startDate, 'yyyy-MM-dd')
     });
 
-    if (!assignments || assignments.length === 0) {
-      console.log('⚠️ No assignments found, using default:', DEFAULT_NUMBER_OF_DAYS);
+    if (!items || items.length === 0) {
+      console.log('⚠️ No items found, using default:', DEFAULT_NUMBER_OF_DAYS);
       return DEFAULT_NUMBER_OF_DAYS;
     }
 
-    // Find the latest end date from all assignments
-    const endDates = assignments
+    // Find the latest end date from all items
+    const endDates = items
       .map(a => {
         try {
           const date = typeof a.end_date === 'string' ? parseISO(a.end_date) : a.end_date;
-          console.log(`  Assignment ${a.id}: ${a.end_date} → ${date ? format(date, 'yyyy-MM-dd') : 'INVALID'}`);
+          console.log(`  Item ${a.id}: ${a.end_date} → ${date ? format(date, 'yyyy-MM-dd') : 'INVALID'}`);
           return date;
         } catch (e) {
-          console.log(`  Assignment ${a.id}: ${a.end_date} → ERROR: ${e.message}`);
+          console.log(`  Item ${a.id}: ${a.end_date} → ERROR: ${e.message}`);
           return null;
         }
       })
       .filter(date => date !== null && date instanceof Date && !isNaN(date));
 
-    console.log(`📅 Valid end dates found: ${endDates.length}/${assignments.length}`);
+    console.log(`📅 Valid end dates found: ${endDates.length}/${items.length}`);
 
     if (endDates.length === 0) {
       console.log('⚠️ No valid end dates, using default:', DEFAULT_NUMBER_OF_DAYS);
@@ -242,18 +247,18 @@ export function useTimelineData(props) {
       usingDefault: requiredDays === DEFAULT_NUMBER_OF_DAYS
     });
 
-    // Add a buffer of 7 days after the last assignment, and ensure minimum of DEFAULT_NUMBER_OF_DAYS
+    // Add a buffer of 7 days after the last item, and ensure minimum of DEFAULT_NUMBER_OF_DAYS
     return requiredDays;
   };
 
   /**
-   * Generate array of timeline days based on configuration or assignment data
+   * Generate array of timeline days based on configuration or item data
    */
   const timelineDays = computed(() => {
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Use manual numberOfDays if toggle enabled, otherwise calculate from assignments
+    // Use manual numberOfDays if toggle enabled, otherwise calculate from items
     const numberOfDays = props.content?.useManualDays
       ? (props.content?.numberOfDays || 90)
       : calculateRequiredDays();
@@ -262,7 +267,7 @@ export function useTimelineData(props) {
       useManualDays: props.content?.useManualDays,
       numberOfDays,
       startDate: format(startDate, 'yyyy-MM-dd'),
-      assignmentCount: activeAssignments.value?.length
+      itemCount: activeItems.value?.length
     });
 
     const days = [];
@@ -333,8 +338,12 @@ export function useTimelineData(props) {
   return {
     timelineDays,
     timelineWeeks,
-    activeResources,
-    activeProjects,
-    activeAssignments: assignmentsWithColors, // Return assignments with resolved colors
+    activeRows, // New generic name
+    activeCategories, // New generic name
+    activeItems: itemsWithColors, // New generic name - items with resolved colors
+    // Legacy exports for backwards compatibility
+    activeResources: activeRows,
+    activeProjects: activeCategories,
+    activeAssignments: itemsWithColors,
   };
 }

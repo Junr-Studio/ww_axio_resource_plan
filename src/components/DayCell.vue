@@ -1,8 +1,8 @@
 <template>
   <div class="day-cell" :style="dayColumnStyle">
     <div class="day-cell-content"></div>
-    <div class="day-capacity-footer" :class="capacityInfo.cssClass">
-      <span class="day-capacity-text">{{ capacityInfo.capacity }}%</span>
+    <div class="day-load-footer" :class="loadInfo?.cssClass">
+      <span v-if="showLoadPercentage" class="day-load-text">{{ loadInfo?.capacity || 0 }}%</span>
     </div>
   </div>
 </template>
@@ -15,13 +15,18 @@ export default {
       type: Object,
       required: true,
     },
-    capacityInfo: {
+    loadInfo: {
       type: Object,
-      required: true,
+      required: false,
+      default: () => ({ capacity: 0, cssClass: '' }),
     },
     dayColumnStyle: {
       type: Object,
       default: () => ({}),
+    },
+    showLoadPercentage: {
+      type: Boolean,
+      default: true,
     },
   },
 };
@@ -43,7 +48,7 @@ export default {
   position: relative;
 }
 
-.day-capacity-footer {
+.day-load-footer {
   height: 18px;
   width: 100%;
   display: flex;
@@ -56,38 +61,38 @@ export default {
   flex-shrink: 0;
 }
 
-.day-capacity-text {
+.day-load-text {
   font-size: 9px;
   font-weight: 500;
   color: #9ca3af;
   user-select: none;
 }
 
-.day-capacity-footer.capacity-full {
+.day-load-footer.capacity-full {
   background: rgba(239, 68, 68, 0.1);
   border-top-color: rgba(239, 68, 68, 0.15);
 
-  .day-capacity-text {
+  .day-load-text {
     color: #dc2626;
     font-weight: 600;
   }
 }
 
-.day-capacity-footer.capacity-high {
+.day-load-footer.capacity-high {
   background: rgba(245, 158, 11, 0.08);
   border-top-color: rgba(245, 158, 11, 0.12);
 
-  .day-capacity-text {
+  .day-load-text {
     color: #ea580c;
     font-weight: 600;
   }
 }
 
-.day-capacity-footer.capacity-medium {
+.day-load-footer.capacity-medium {
   background: rgba(234, 179, 8, 0.06);
   border-top-color: rgba(234, 179, 8, 0.1);
 
-  .day-capacity-text {
+  .day-load-text {
     color: #ca8a04;
     font-weight: 600;
   }
