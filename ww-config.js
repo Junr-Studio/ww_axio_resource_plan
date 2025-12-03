@@ -6,7 +6,10 @@ export default {
     icon: "calendar",
   },
   properties: {
-    // Data Properties
+    // ========================================
+    // DATA SOURCE (Main Timeline Items)
+    // ========================================
+
     items: {
       label: { en: "Timeline Items" },
       type: "Array",
@@ -56,8 +59,10 @@ export default {
       /* wwEditor:end */
     },
 
-    // Formula properties for flexible field mapping
-    // Item-level fields
+    // ========================================
+    // ITEM FIELD MAPPINGS (Basic Fields)
+    // ========================================
+
     itemIdFormula: {
       label: { en: 'Item ID Field' },
       type: 'Formula',
@@ -138,6 +143,10 @@ export default {
       /* wwEditor:end */
     },
 
+    // ========================================
+    // ITEM FIELD MAPPINGS
+    // ========================================
+
     itemLoadFormula: {
       label: { en: 'Load/Utilization Field' },
       type: 'Formula',
@@ -159,7 +168,9 @@ export default {
       /* wwEditor:end */
     },
 
-    // Row object field mappings
+    // ========================================
+    // ROW FIELD MAPPINGS (Resources/People)
+    // ========================================
     rowIdFormula: {
       label: { en: 'Row ID Field' },
       type: 'Formula',
@@ -220,7 +231,9 @@ export default {
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    // Category object field mappings
+    // ========================================
+    // CATEGORY FIELD MAPPINGS (Projects/Types)
+    // ========================================
     categoryIdFormula: {
       label: { en: 'Category ID Field' },
       type: 'Formula',
@@ -266,7 +279,9 @@ export default {
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
     },
 
-    // Exclusion Periods (Vacations, Time Off, etc.)
+    // ========================================
+    // EXCLUSION PERIODS (Vacations/Time Off)
+    // ========================================
     exclusions: {
       label: { en: "Exclusion Periods" },
       type: "Array",
@@ -303,7 +318,7 @@ export default {
       /* wwEditor:end */
     },
 
-    // Exclusion formula properties
+    // --- Exclusion Field Mappings ---
     exclusionRowIdFormula: {
       label: { en: 'Exclusion Row/Resource ID Field' },
       type: 'Formula',
@@ -367,7 +382,10 @@ export default {
       /* wwEditor:end */
     },
 
-    // Timeline Settings
+    // ========================================
+    // TIMELINE CONFIGURATION
+    // ========================================
+
     useManualDays: {
       label: { en: "Override Timeline Length" },
       type: "OnOff",
@@ -420,7 +438,10 @@ export default {
       /* wwEditor:end */
     },
 
-    // Visual Settings
+    // ========================================
+    // VISUAL STYLING
+    // ========================================
+
     rowHeight: {
       label: { en: "Row Height" },
       type: "Length",
