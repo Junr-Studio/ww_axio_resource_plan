@@ -36,6 +36,15 @@
           @show-tooltip="(item, event) => $emit('show-tooltip', item, event)"
           @hide-tooltip="$emit('hide-tooltip')"
         />
+
+        <!-- Exclusion Bars -->
+        <ExclusionBar
+          v-for="exclusion in exclusions"
+          :key="exclusion.id"
+          :exclusion="exclusion"
+          :exclusion-style="getExclusionBarStyle(exclusion)"
+          :show-label="false"
+        />
       </div>
     </div>
   </div>
@@ -45,12 +54,14 @@
 import { getInitials } from '../utils/dateHelpers';
 import DayCell from './DayCell.vue';
 import ItemBar from './ItemBar.vue';
+import ExclusionBar from './ExclusionBar.vue';
 
 export default {
   name: 'TimelineRow',
   components: {
     DayCell,
     ItemBar,
+    ExclusionBar,
   },
   props: {
     row: {
@@ -64,6 +75,10 @@ export default {
     items: {
       type: Array,
       required: true,
+    },
+    exclusions: {
+      type: Array,
+      default: () => [],
     },
     rowStyle: {
       type: Object,
@@ -88,6 +103,10 @@ export default {
     getItemBarStyle: {
       type: Function,
       required: true,
+    },
+    getExclusionBarStyle: {
+      type: Function,
+      default: () => () => ({}),
     },
     showLoadPercentage: {
       type: Boolean,

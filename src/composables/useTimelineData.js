@@ -244,9 +244,19 @@ export function useTimelineData(props) {
       ? (props.content?.numberOfDays || 90)
       : calculateRequiredDays();
 
+    // Check if weekends should be shown
+    const showWeekends = props.content?.showWeekends ?? true;
+
     const days = [];
     for (let i = 0; i < numberOfDays; i++) {
       const dayDate = addDays(startDate, i);
+      const dayOfWeek = dayDate.getDay(); // 0 = Sunday, 6 = Saturday
+
+      // Skip weekends if showWeekends is false
+      if (!showWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
+        continue;
+      }
+
       days.push({
         dayKey: format(dayDate, 'yyyy-MM-dd'),
         dayOfWeek: format(dayDate, 'EEE', { locale: dateFnsLocale.value }),

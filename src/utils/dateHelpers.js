@@ -38,3 +38,42 @@ export function getInitials(name) {
     .toUpperCase()
     .substring(0, 2);
 }
+
+/**
+ * Count weekdays between two dates (excluding weekends)
+ * @param {Date} startDate - Start date (inclusive)
+ * @param {Date} endDate - End date (inclusive)
+ * @param {boolean} includeWeekends - Whether to include weekends in count
+ * @returns {number} Number of days (weekdays only if includeWeekends is false)
+ */
+export function countDaysBetween(startDate, endDate, includeWeekends = true) {
+  if (includeWeekends) {
+    // Simple calendar day difference
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    const diffTime = end - start;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }
+
+  // Count only weekdays (Monday-Friday)
+  let count = 0;
+  const current = new Date(startDate);
+  const end = new Date(endDate);
+
+  current.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    // 0 = Sunday, 6 = Saturday - skip these
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return count;
+}

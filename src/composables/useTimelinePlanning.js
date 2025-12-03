@@ -9,6 +9,7 @@ import { useCapacity } from './useCapacity';
 import { useAssignments } from './useAssignments';
 import { useStyles } from './useStyles';
 import { useInteractions } from './useInteractions';
+import { useExclusions } from './useExclusions';
 
 /**
  * Main composable that orchestrates all timeline planning functionality
@@ -80,6 +81,16 @@ export function useTimelinePlanning(props, emit) {
   } = useStyles(props, timelineDays, getRowLaneCount);
 
   // ========================================
+  // EXCLUSION PERIODS (VACATIONS, TIME OFF)
+  // ========================================
+  const {
+    activeExclusions,
+    getRowExclusions,
+    isDateExcluded,
+    getExclusionBarStyle,
+  } = useExclusions(props, timelineDays);
+
+  // ========================================
   // USER INTERACTIONS
   // ========================================
   const {
@@ -137,6 +148,12 @@ export function useTimelinePlanning(props, emit) {
 
     // Tooltip state
     tooltip,
+
+    // Exclusion periods (new)
+    activeExclusions,
+    getRowExclusions,
+    isDateExcluded,
+    getExclusionBarStyle,
 
     // ========================================
     // LEGACY COMPATIBILITY EXPORTS

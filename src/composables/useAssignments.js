@@ -1,4 +1,4 @@
-import { parseISO, differenceInDays } from 'date-fns';
+import { parseISO, differenceInDays, format } from 'date-fns';
 import { doRangesOverlap } from '../utils/capacityHelpers';
 import { ASSIGNMENT_BAR_HEIGHT, LANE_HEIGHT } from '../utils/constants';
 
@@ -107,17 +107,82 @@ export function useAssignments(activeItems, activeCategories, timelineDays, getL
       // Get dayWidth from timelineDays data or default to 40
       const dayWidth = parseFloat(timelineDays.value?.[0]?.width || '40');
 
-      const startDate = parseISO(item.start_date);
-      const endDate = parseISO(item.end_date);
-      const today = new Date();
-      const timelineStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      // Handle multiple date formats (ISO, timestampz, etc.) - same as exclusions
+      const startDate = typeof item.start_date === 'number'
+        ? new Date(item.start_date)
+        : typeof item.start_date === 'string' && (item.start_date.includes('T') || item.start_date.includes(' '))
+          ? new Date(item.start_date)
+          : parseISO(item.start_date);
 
-      // Calculate position from timeline start
-      const daysFromStart = differenceInDays(startDate, timelineStart);
-      const duration = differenceInDays(endDate, startDate);
+      const endDate = typeof item.end_date === 'number'
+        ? new Date(item.end_date)
+        : typeof item.end_date === 'string' && (item.end_date.includes('T') || item.end_date.includes(' '))
+          ? new Date(item.end_date)
+          : parseISO(item.end_date);
+      // Find the start and end positions in the visible timeline array
+      // This automatically handles weekend filtering
+      const days = timelineDays.value || [];
 
-      const leftPosition = daysFromStart * dayWidth;
-      const width = duration * dayWidth;
+      // Normalize dates for comparison
+      const itemStartStr = format(startDate, 'yyyy-MM-dd');
+      const itemEndStr = format(endDate, 'yyyy-MM-dd');
+
+      // Find indices in the visible timeline
+      let startIndex = days.findIndex(day => day.dayKey === itemStartStr);
+      let endIndex = days.findIndex(day => day.dayKey === itemEndStr);
+
+      // Handle items that extend beyond visible timeline range
+      if (startIndex === -1 && endIndex === -1) {
+        // Both dates outside timeline - check if item overlaps with visible range
+        const firstDay = days[0]?.date;
+        const lastDay = days[days.length - 1]?.date;
+
+        if (firstDay && lastDay) {
+          // Ensure dates are Date objects for comparison
+          const firstDayDate = typeof firstDay === 'string' ? new Date(firstDay) : new Date(firstDay);
+          const lastDayDate = typeof lastDay === 'string' ? new Date(lastDay) : new Date(lastDay);
+
+          // Normalize all to midnight
+          firstDayDate.setHours(0, 0, 0, 0);
+          lastDayDate.setHours(0, 0, 0, 0);
+          const startDateNorm = new Date(startDate);
+          const endDateNorm = new Date(endDate);
+          startDateNorm.setHours(0, 0, 0, 0);
+          endDateNorm.setHours(0, 0, 0, 0);
+
+          const isBeforeTimeline = endDateNorm < firstDayDate;
+          const isAfterTimeline = startDateNorm > lastDayDate;
+
+          if (isBeforeTimeline || isAfterTimeline) {
+            // Item completely outside visible range - hide it
+            return {
+              left: '0px',
+              width: '0px',
+              top: '0px',
+              height: '0px',
+              display: 'none',
+            };
+          }
+
+          // Item spans entire visible timeline
+          startIndex = 0;
+          endIndex = days.length - 1;
+        }
+      } else {
+        // Clip to visible timeline boundaries
+        if (startIndex === -1) {
+          // Starts before timeline - clip to start
+          startIndex = 0;
+        }
+        if (endIndex === -1) {
+          // Ends after timeline - clip to end
+          endIndex = days.length - 1;
+        }
+      }
+
+      // Calculate position and width based on visible timeline indices
+      const leftPosition = startIndex * dayWidth;
+      const width = (endIndex - startIndex + 1) * dayWidth;
 
       // Lane positioning
       const lane = item.lane || 0;

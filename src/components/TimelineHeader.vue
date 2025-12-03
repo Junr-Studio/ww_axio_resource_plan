@@ -1,7 +1,7 @@
 <template>
   <div class="timeline-header">
-    <!-- Resource column header spanning both rows -->
-    <div class="resource-column-header" :style="resourceColumnStyle">
+    <!-- Row column header (left sticky column) -->
+    <div class="row-column-header" :style="rowColumnStyle">
       <!-- Empty header space -->
     </div>
 
@@ -57,7 +57,7 @@ const props = defineProps({
     type: Array,
     required: true,
   },
-  resourceColumnStyle: {
+  rowColumnStyle: {
     type: Object,
     default: () => ({}),
   },
@@ -183,7 +183,7 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.resource-column-header {
+.row-column-header {
   display: flex;
   align-items: center;
   padding: 16px;

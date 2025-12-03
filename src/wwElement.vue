@@ -27,12 +27,14 @@
         :row="row"
         :days="timelineDays"
         :items="getRowItems(row.id)"
+        :exclusions="getRowExclusions(row.id)"
         :row-style="getRowStyle(row.id)"
         :row-column-style="rowColumnStyle"
         :day-column-style="dayColumnStyle"
         :days-container-style="daysContainerStyle"
         :get-day-load-info="getDayLoadInfo"
         :get-item-bar-style="getItemBarStyle"
+        :get-exclusion-bar-style="getExclusionBarStyle"
         :show-load-percentage="content?.showLoadPercentage ?? true"
         @row-click="handleRowClick"
         @item-click="handleItemClick"
@@ -160,8 +162,12 @@ export default {
     // Watch for timeline days and update visible date range
     watch(() => planning.timelineDays.value, (days) => {
       if (days && days.length > 0) {
-        setVisibleStartDate(days[0]?.date || '');
-        setVisibleEndDate(days[days.length - 1]?.date || '');
+        const startDate = days[0]?.date;
+        const endDate = days[days.length - 1]?.date;
+
+        // Convert Date objects to ISO strings for WeWeb variables
+        setVisibleStartDate(startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate || '');
+        setVisibleEndDate(endDate instanceof Date ? endDate.toISOString().split('T')[0] : endDate || '');
       }
     }, { immediate: true });
 
@@ -198,8 +204,12 @@ export default {
         const visibleDayEnd = Math.ceil((scrollLeft + containerWidth) / dayWidth);
 
         const days = planning.timelineDays.value || [];
-        const visibleStart = days[visibleDayStart]?.date || '';
-        const visibleEnd = days[Math.min(visibleDayEnd, days.length - 1)]?.date || '';
+        const visibleStart = days[visibleDayStart]?.date;
+        const visibleEnd = days[Math.min(visibleDayEnd, days.length - 1)]?.date;
+
+        // Convert Date objects to ISO strings for WeWeb variables
+        const visibleStartStr = visibleStart instanceof Date ? visibleStart.toISOString().split('T')[0] : visibleStart || '';
+        const visibleEndStr = visibleEnd instanceof Date ? visibleEnd.toISOString().split('T')[0] : visibleEnd || '';
 
         // Emit timeline-scrolled trigger
         emit('trigger-event', {
@@ -207,8 +217,8 @@ export default {
           event: {
             scrollLeft,
             scrollTop,
-            visibleStartDate: visibleStart,
-            visibleEndDate: visibleEnd,
+            visibleStartDate: visibleStartStr,
+            visibleEndDate: visibleEndStr,
           },
         });
       } catch (error) {
@@ -315,6 +325,8 @@ export default {
       getDayLoadInfo: planning.getDayLoadInfo,
       getRowStyle: planning.getRowStyle,
       getItemBarStyle: planning.getItemBarStyle,
+      getRowExclusions: planning.getRowExclusions,
+      getExclusionBarStyle: planning.getExclusionBarStyle,
       handleRowClick: handleRowClickWithVariable,
       handleItemClick: handleItemClickWithVariable,
       showTooltip: planning.showTooltip,

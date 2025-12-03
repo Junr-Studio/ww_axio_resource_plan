@@ -147,7 +147,7 @@ export default {
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['load'] || context.mapping?.['assigned_capacity'] || context.mapping?.['capacity_percentage'] || context.mapping?.['capacity'] || 1",
+        code: "context.mapping?.['assigned_capacity'] || context.mapping?.['load'] || context.mapping?.['capacity_percentage'] || context.mapping?.['capacity'] || 1",
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items || !content?.showLoadPercentage,
@@ -169,7 +169,7 @@ export default {
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['row']?.['id'] || context.mapping?.['resource']?.['id']",
+        code: "context.mapping?.['resource'] || context.mapping?.['row']?.['id'] || context.mapping?.['resource']?.['id']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
@@ -184,7 +184,7 @@ export default {
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['row']?.['name'] || context.mapping?.['resource']?.['name'] || context.mapping?.['row']?.['title'] || context.mapping?.['resource']?.['title']",
+        code: "context.mapping?.['resource_details']?.['title'] || context.mapping?.['row']?.['name'] || context.mapping?.['resource']?.['name'] || context.mapping?.['row']?.['title'] || context.mapping?.['resource']?.['title']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
@@ -230,7 +230,7 @@ export default {
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['category']?.['id'] || context.mapping?.['project']?.['id']",
+        code: "context.mapping?.['project'] || context.mapping?.['category']?.['id'] || context.mapping?.['project']?.['id']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
@@ -245,7 +245,7 @@ export default {
       }),
       defaultValue: {
         type: 'f',
-        code: "context.mapping?.['category']?.['name'] || context.mapping?.['project']?.['name'] || context.mapping?.['category']?.['title'] || context.mapping?.['project']?.['title']",
+        code: "context.mapping?.['project_details']?.['title'] || context.mapping?.['category']?.['name'] || context.mapping?.['project']?.['name'] || context.mapping?.['category']?.['title'] || context.mapping?.['project']?.['title']",
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
@@ -264,6 +264,107 @@ export default {
       },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.items) || !content.items?.length || !boundProps.items,
+    },
+
+    // Exclusion Periods (Vacations, Time Off, etc.)
+    exclusions: {
+      label: { en: "Exclusion Periods" },
+      type: "Array",
+      section: "settings",
+      bindable: true,
+      defaultValue: [],
+      options: {
+        expandable: true,
+        getItemLabel(exclusion) {
+          const rowId = exclusion?.row_id || exclusion?.resource_id || exclusion?.row?.id || 'Unknown';
+          const startDate = exclusion?.start_date ? new Date(exclusion.start_date).toLocaleDateString() : 'Start';
+          const endDate = exclusion?.end_date ? new Date(exclusion.end_date).toLocaleDateString() : 'End';
+          return `Row ${rowId}: ${startDate} → ${endDate}`;
+        },
+        item: {
+          type: "Object",
+          defaultValue: {
+            id: "",
+            row_id: "",
+            start_date: "",
+            end_date: "",
+            label: ""
+          },
+        },
+      },
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "array",
+        tooltip: "Array of exclusion periods with row and date range",
+      },
+      propertyHelp: {
+        en: "Define exclusion periods (vacations, time off, unavailability) for rows. Each exclusion shows as a grayed-out period on the timeline for the specified row and date range.",
+      },
+      /* wwEditor:end */
+    },
+
+    // Exclusion formula properties
+    exclusionRowIdFormula: {
+      label: { en: 'Exclusion Row/Resource ID Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['resource'] || context.mapping?.['row_id'] || context.mapping?.['resource_id'] || context.mapping?.['row']?.['id']",
+      },
+      hidden: (content, sidepanelContent, boundProps) => !boundProps.exclusions,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field containing the row/resource ID that this exclusion applies to',
+      },
+      propertyHelp: {
+        en: "Map the field that contains the row/resource ID. This determines which row in the timeline will show the exclusion period.",
+      },
+      /* wwEditor:end */
+    },
+
+    exclusionStartDateFormula: {
+      label: { en: 'Exclusion Start Date Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['start_date']",
+      },
+      hidden: (content, sidepanelContent, boundProps) => !boundProps.exclusions,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field containing exclusion start date',
+      },
+      /* wwEditor:end */
+    },
+
+    exclusionEndDateFormula: {
+      label: { en: 'Exclusion End Date Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: content => ({
+        template: Array.isArray(content.exclusions) && content.exclusions.length > 0 ? content.exclusions[0] : {},
+      }),
+      defaultValue: {
+        type: 'f',
+        code: "context.mapping?.['end_date']",
+      },
+      hidden: (content, sidepanelContent, boundProps) => !boundProps.exclusions,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: 'string',
+        tooltip: 'Field containing exclusion end date',
+      },
+      /* wwEditor:end */
     },
 
     // Timeline Settings
@@ -298,6 +399,23 @@ export default {
       },
       propertyHelp: {
         en: "Set the number of days to display in the timeline from today's date.",
+      },
+      /* wwEditor:end */
+    },
+
+    showWeekends: {
+      label: { en: "Show Weekends" },
+      type: "OnOff",
+      section: "settings",
+      defaultValue: true,
+      bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "boolean",
+        tooltip: "Show or hide weekends (Saturday and Sunday) in the timeline",
+      },
+      propertyHelp: {
+        en: "Toggle to show or hide weekends (Saturday and Sunday) in the timeline. When disabled, the timeline will only display weekdays (Monday-Friday).",
       },
       /* wwEditor:end */
     },
