@@ -1,8 +1,8 @@
 <template>
   <div class="day-cell" :style="dayColumnStyle">
     <div class="day-cell-content"></div>
-    <div class="day-load-footer" :class="loadInfo?.cssClass">
-      <span v-if="showLoadPercentage" class="day-load-text">{{ loadInfo?.capacity || 0 }}%</span>
+    <div v-if="showLoadPercentage" class="day-load-footer" :class="loadInfo?.cssClass">
+      <span class="day-load-text">{{ loadInfo?.capacity || 0 }}%</span>
     </div>
   </div>
 </template>

@@ -1,6 +1,6 @@
 {
   "name": "ww_resource_plan",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Sprint-based resource capacity planning timeline component",
   "scripts": {
     "build": "weweb build",

@@ -309,6 +309,15 @@ export default {
       section: "style",
       defaultValue: "80px",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "CSS length value for row height",
+      },
+      propertyHelp: {
+        en: "Set the height of each row in the timeline.",
+      },
+      /* wwEditor:end */
     },
 
     dayColumnWidth: {
@@ -317,6 +326,32 @@ export default {
       section: "style",
       defaultValue: "40px",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "CSS length value for day column width",
+      },
+      propertyHelp: {
+        en: "Set the width of each day column in the timeline grid.",
+      },
+      /* wwEditor:end */
+    },
+
+    resourceColumnWidth: {
+      label: { en: "Row Column Width" },
+      type: "Length",
+      section: "style",
+      defaultValue: "200px",
+      bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "CSS length value for row information column width",
+      },
+      propertyHelp: {
+        en: "Set the width of the left sticky column showing row information (avatar, name, subtitle).",
+      },
+      /* wwEditor:end */
     },
 
     // Load Status Colors
@@ -327,6 +362,10 @@ export default {
       defaultValue: "#10b981",
       bindable: true,
       /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
       propertyHelp: {
         en: "Border color for items when row has <80% load",
       },
@@ -340,6 +379,10 @@ export default {
       defaultValue: "#f59e0b",
       bindable: true,
       /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
       propertyHelp: {
         en: "Border color for items when row has 80-100% load",
       },
@@ -353,6 +396,10 @@ export default {
       defaultValue: "#ef4444",
       bindable: true,
       /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
       propertyHelp: {
         en: "Border color for items when row has >100% load",
       },
@@ -366,6 +413,15 @@ export default {
       section: "style",
       defaultValue: "#ffffff",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
+      propertyHelp: {
+        en: "Set the background color of the timeline component.",
+      },
+      /* wwEditor:end */
     },
 
     borderColor: {
@@ -374,6 +430,15 @@ export default {
       section: "style",
       defaultValue: "#e5e7eb",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
+      propertyHelp: {
+        en: "Set the color of the grid borders in the timeline.",
+      },
+      /* wwEditor:end */
     },
 
     headerBackgroundColor: {
@@ -382,6 +447,15 @@ export default {
       section: "style",
       defaultValue: "#f9fafb",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
+      propertyHelp: {
+        en: "Set the background color of the timeline header (weeks and days).",
+      },
+      /* wwEditor:end */
     },
 
     textColor: {
@@ -390,6 +464,15 @@ export default {
       section: "style",
       defaultValue: "#1f2937",
       bindable: true,
+      /* wwEditor:start */
+      bindingValidation: {
+        type: "string",
+        tooltip: "Valid CSS color value",
+      },
+      propertyHelp: {
+        en: "Set the color of text throughout the timeline component.",
+      },
+      /* wwEditor:end */
     },
   },
 
@@ -405,11 +488,59 @@ export default {
       },
     },
     {
+      name: "item-hovered",
+      label: { en: "Item hovered" },
+      event: {
+        itemId: "",
+        rowId: "",
+        categoryId: "",
+        item: {},
+      },
+    },
+    {
       name: "row-clicked",
       label: { en: "Row clicked" },
       event: {
         rowId: "",
         row: {},
+      },
+    },
+    {
+      name: "row-hovered",
+      label: { en: "Row hovered" },
+      event: {
+        rowId: "",
+        row: {},
+      },
+    },
+    {
+      name: "day-clicked",
+      label: { en: "Day clicked" },
+      event: {
+        date: "",
+        dayKey: "",
+        rowId: "",
+        load: 0,
+      },
+    },
+    {
+      name: "timeline-scrolled",
+      label: { en: "Timeline scrolled" },
+      event: {
+        scrollLeft: 0,
+        scrollTop: 0,
+        visibleStartDate: "",
+        visibleEndDate: "",
+      },
+    },
+    {
+      name: "capacity-exceeded",
+      label: { en: "Capacity exceeded" },
+      event: {
+        rowId: "",
+        date: "",
+        load: 0,
+        threshold: 100,
       },
     },
   ],

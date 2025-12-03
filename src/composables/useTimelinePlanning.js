@@ -60,7 +60,8 @@ export function useTimelinePlanning(props, emit) {
     activeItems,
     activeCategories,
     timelineDays,
-    (rowId, item) => getLoadStatusInfo(rowId, item, timelineDays.value, props)
+    (rowId, item) => getLoadStatusInfo(rowId, item, timelineDays.value, props),
+    props
   );
 
   // ========================================
@@ -86,6 +87,9 @@ export function useTimelinePlanning(props, emit) {
     tooltipStyle,
     handleRowClick,
     handleItemClick,
+    handleRowHover,
+    handleItemHover,
+    handleDayClick,
     showTooltip,
     hideTooltip,
     // Legacy compatibility
@@ -125,6 +129,9 @@ export function useTimelinePlanning(props, emit) {
     // Event handlers (new generic names)
     handleRowClick,
     handleItemClick,
+    handleRowHover,
+    handleItemHover,
+    handleDayClick,
     showTooltip,
     hideTooltip,
 

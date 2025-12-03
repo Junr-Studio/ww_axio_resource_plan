@@ -6,7 +6,7 @@ import { ASSIGNMENT_BAR_HEIGHT, LANE_HEIGHT } from '../utils/constants';
  * Composable for item processing
  * Handles lane calculation and item layout (generic for any timeline items)
  */
-export function useAssignments(activeItems, activeCategories, timelineDays, getLoadStatusInfo) {
+export function useAssignments(activeItems, activeCategories, timelineDays, getLoadStatusInfo, props) {
   /**
    * Get all items for a specific row with lane assignments
    * Uses a greedy algorithm to pack items into lanes without overlap
@@ -14,42 +14,58 @@ export function useAssignments(activeItems, activeCategories, timelineDays, getL
    * @returns {Array} Sorted items with lane property
    */
   const getRowItems = (rowId) => {
-    const items = activeItems.value.filter((a) => a.row_id === rowId || a.resource_id === rowId);
+    if (!rowId || !activeItems.value || !Array.isArray(activeItems.value)) return [];
+
+    const items = activeItems.value.filter((a) => a?.row_id === rowId || a?.resource_id === rowId);
 
     // Sort by start date for consistent lane assignment
     const sortedItems = [...items].sort((a, b) => {
-      return new Date(a.start_date) - new Date(b.start_date);
+      const dateA = a?.start_date ? new Date(a.start_date) : new Date(0);
+      const dateB = b?.start_date ? new Date(b.start_date) : new Date(0);
+      return dateA - dateB;
     });
 
     // Assign lanes using greedy algorithm
     const lanes = [];
 
     sortedItems.forEach((item) => {
-      const itemStart = parseISO(item.start_date);
-      const itemEnd = parseISO(item.end_date);
+      if (!item?.start_date || !item?.end_date) return;
 
-      let laneIndex = 0;
-      let laneFound = false;
+      try {
+        const itemStart = parseISO(item.start_date);
+        const itemEnd = parseISO(item.end_date);
 
-      // Try to find a lane where this item doesn't overlap
-      while (!laneFound) {
-        if (!lanes[laneIndex]) {
-          lanes[laneIndex] = [];
+        let laneIndex = 0;
+        let laneFound = false;
+
+        // Try to find a lane where this item doesn't overlap
+        while (!laneFound) {
+          if (!lanes[laneIndex]) {
+            lanes[laneIndex] = [];
+          }
+
+          const hasOverlap = lanes[laneIndex].some((existingItem) => {
+            if (!existingItem?.start_date || !existingItem?.end_date) return false;
+            try {
+              const existingStart = parseISO(existingItem.start_date);
+              const existingEnd = parseISO(existingItem.end_date);
+              return doRangesOverlap(itemStart, itemEnd, existingStart, existingEnd);
+            } catch (error) {
+              return false;
+            }
+          });
+
+          if (!hasOverlap) {
+            lanes[laneIndex].push(item);
+            item.lane = laneIndex;
+            laneFound = true;
+          } else {
+            laneIndex++;
+          }
         }
-
-        const hasOverlap = lanes[laneIndex].some((existingItem) => {
-          const existingStart = parseISO(existingItem.start_date);
-          const existingEnd = parseISO(existingItem.end_date);
-          return doRangesOverlap(itemStart, itemEnd, existingStart, existingEnd);
-        });
-
-        if (!hasOverlap) {
-          lanes[laneIndex].push(item);
-          item.lane = laneIndex;
-          laneFound = true;
-        } else {
-          laneIndex++;
-        }
+      } catch (error) {
+        // Skip items with invalid dates
+        return;
       }
     });
 
@@ -76,40 +92,67 @@ export function useAssignments(activeItems, activeCategories, timelineDays, getL
    * @returns {Object} Style object with position and dimensions
    */
   const getItemBarStyle = (item, rowId) => {
-    const category = activeCategories.value.find((p) => p.id === item.category_id || p.id === item.project_id);
-    const dayWidth = parseFloat(timelineDays.value[0]?.date ? '40' : '40'); // Default 40px
+    if (!item?.start_date || !item?.end_date) {
+      return {
+        left: '0px',
+        width: '0px',
+        top: '0px',
+        height: '0px',
+        display: 'none',
+      };
+    }
 
-    const startDate = parseISO(item.start_date);
-    const endDate = parseISO(item.end_date);
-    const today = new Date();
-    const timelineStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    try {
+      const category = activeCategories.value?.find((p) => p?.id === item?.category_id || p?.id === item?.project_id);
+      // Get dayWidth from timelineDays data or default to 40
+      const dayWidth = parseFloat(timelineDays.value?.[0]?.width || '40');
 
-    // Calculate position from timeline start
-    const daysFromStart = differenceInDays(startDate, timelineStart);
-    const duration = differenceInDays(endDate, startDate);
+      const startDate = parseISO(item.start_date);
+      const endDate = parseISO(item.end_date);
+      const today = new Date();
+      const timelineStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    const leftPosition = daysFromStart * dayWidth;
-    const width = duration * dayWidth;
+      // Calculate position from timeline start
+      const daysFromStart = differenceInDays(startDate, timelineStart);
+      const duration = differenceInDays(endDate, startDate);
 
-    // Lane positioning
-    const lane = item.lane || 0;
-    const topPosition = lane * LANE_HEIGHT + 8;
+      const leftPosition = daysFromStart * dayWidth;
+      const width = duration * dayWidth;
 
-    // Get load status for border styling
-    const loadInfo = getLoadStatusInfo(rowId, item);
+      // Lane positioning
+      const lane = item.lane || 0;
+      const DAY_LOAD_FOOTER_HEIGHT = 18; // Height of the footer in DayCell
+      const showLoadPercentage = props?.content?.showLoadPercentage ?? true;
 
-    // Styling
-    const backgroundColor = category?.color || '#3b82f6';
+      // When footer is hidden, add half its height to recenter lanes vertically
+      const footerOffset = showLoadPercentage ? 0 : DAY_LOAD_FOOTER_HEIGHT / 2;
+      const topPosition = lane * LANE_HEIGHT + 8 + footerOffset;
 
-    return {
-      left: `${leftPosition}px`,
-      width: `${width}px`,
-      top: `${topPosition}px`,
-      height: `${ASSIGNMENT_BAR_HEIGHT}px`,
-      backgroundColor,
-      borderColor: loadInfo.color,
-      borderWidth: loadInfo.borderWidth,
-    };
+      // Get load status for border styling
+      const loadInfo = getLoadStatusInfo(rowId, item);
+
+      // Styling
+      const backgroundColor = category?.color || '#3b82f6';
+
+      return {
+        left: `${leftPosition}px`,
+        width: `${width}px`,
+        top: `${topPosition}px`,
+        height: `${ASSIGNMENT_BAR_HEIGHT}px`,
+        backgroundColor,
+        borderColor: loadInfo.color,
+        borderWidth: loadInfo.borderWidth,
+      };
+    } catch (error) {
+      // Return safe default for invalid dates
+      return {
+        left: '0px',
+        width: '0px',
+        top: '0px',
+        height: '0px',
+        display: 'none',
+      };
+    }
   };
 
   return {

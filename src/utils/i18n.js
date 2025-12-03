@@ -40,8 +40,8 @@ const translations = {
  * @returns {string} Translated text
  */
 export function getTranslation(key, locale = 'en') {
-  const normalizedLocale = locale?.toLowerCase().split('-')[0] || 'en'; // Handle 'en-US' -> 'en'
-  const translation = translations[normalizedLocale]?.[key] || translations['en'][key];
+  const normalizedLocale = locale?.toLowerCase()?.split('-')?.[0] || 'en'; // Handle 'en-US' -> 'en'
+  const translation = translations[normalizedLocale]?.[key] || translations['en']?.[key];
   return translation || key;
 }
 
@@ -51,7 +51,7 @@ export function getTranslation(key, locale = 'en') {
  * @returns {object} All translations for the locale
  */
 export function getTranslations(locale = 'en') {
-  const normalizedLocale = locale?.toLowerCase().split('-')[0] || 'en';
+  const normalizedLocale = locale?.toLowerCase()?.split('-')?.[0] || 'en';
   return translations[normalizedLocale] || translations['en'];
 }
 
@@ -62,12 +62,14 @@ export function getTranslations(locale = 'en') {
  */
 export function getWeWebLanguage() {
   try {
-    // Access WeWeb's global language variable
-    // This is typically available in the global scope
-    const wwLang = window?.wwLang || wwLib?.wwLang?.lang;
+    // CRITICAL: Use wwLib.getFrontWindow() instead of direct window access
+    const frontWindow = wwLib?.getFrontWindow?.();
+    const wwLang = frontWindow?.wwLang || wwLib?.wwLang?.lang;
     return wwLang || 'en';
   } catch (error) {
+    /* wwEditor:start */
     console.warn('Could not access WeWeb language, defaulting to English:', error);
+    /* wwEditor:end */
     return 'en';
   }
 }

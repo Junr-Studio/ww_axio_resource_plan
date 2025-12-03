@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { format } from 'date-fns';
 import { useLocale } from '../composables/useLocale';
 
@@ -71,8 +71,77 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(['header-scroll']);
+
 const headerScrollRef = ref(null); // weeks container
 const daysScrollRef = ref(null); // days container
+
+// Flag to prevent infinite scroll loops
+let isScrolling = false;
+
+/**
+ * Handle scroll on days container - sync to parent body
+ */
+const handleDaysScroll = (event) => {
+  if (isScrolling) return;
+
+  const scrollLeft = event?.target?.scrollLeft ?? daysScrollRef.value?.scrollLeft ?? 0;
+
+  isScrolling = true;
+  // Sync weeks container
+  if (headerScrollRef.value) {
+    headerScrollRef.value.scrollLeft = scrollLeft;
+  }
+  // Emit to parent to sync body
+  emit('header-scroll', scrollLeft);
+
+  // Reset flag after a small delay
+  setTimeout(() => {
+    isScrolling = false;
+  }, 10);
+};
+
+/**
+ * Handle scroll on weeks container - sync to parent body
+ */
+const handleWeeksScroll = (event) => {
+  if (isScrolling) return;
+
+  const scrollLeft = event?.target?.scrollLeft ?? headerScrollRef.value?.scrollLeft ?? 0;
+
+  isScrolling = true;
+  // Sync days container
+  if (daysScrollRef.value) {
+    daysScrollRef.value.scrollLeft = scrollLeft;
+  }
+  // Emit to parent to sync body
+  emit('header-scroll', scrollLeft);
+
+  // Reset flag after a small delay
+  setTimeout(() => {
+    isScrolling = false;
+  }, 10);
+};
+
+// Setup scroll listeners
+onMounted(() => {
+  if (headerScrollRef.value) {
+    headerScrollRef.value.addEventListener('scroll', handleWeeksScroll);
+  }
+  if (daysScrollRef.value) {
+    daysScrollRef.value.addEventListener('scroll', handleDaysScroll);
+  }
+});
+
+// Cleanup listeners
+onUnmounted(() => {
+  if (headerScrollRef.value) {
+    headerScrollRef.value.removeEventListener('scroll', handleWeeksScroll);
+  }
+  if (daysScrollRef.value) {
+    daysScrollRef.value.removeEventListener('scroll', handleDaysScroll);
+  }
+});
 
 /**
  * Calculate the width style for each week header based on day count
@@ -162,11 +231,11 @@ defineExpose({
     display: none;
   }
 
-  /* Prevent user scrolling, only programmatic */
-  pointer-events: none;
+  /* Allow user scrolling with touch/trackpad gestures */
+  cursor: grab;
 
-  > * {
-    pointer-events: auto;
+  &:active {
+    cursor: grabbing;
   }
 }
 
@@ -206,11 +275,11 @@ defineExpose({
     display: none;
   }
 
-  /* Prevent user scrolling, only programmatic */
-  pointer-events: none;
+  /* Allow user scrolling with touch/trackpad gestures */
+  cursor: grab;
 
-  > * {
-    pointer-events: auto;
+  &:active {
+    cursor: grabbing;
   }
 }
 

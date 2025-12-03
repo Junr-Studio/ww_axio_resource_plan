@@ -49,12 +49,19 @@ export default {
     const updateLabelPosition = () => {
       if (!barRef.value) return;
 
-      const scrollContainer = barRef.value.closest('.timeline-body');
+      // Use wwLib to access document safely
+      const frontDocument = wwLib?.getFrontDocument?.() || document;
+
+      let scrollContainer = barRef.value.closest('.timeline-body');
+      if (!scrollContainer) {
+        // Fallback: try to find it using frontDocument
+        scrollContainer = frontDocument.querySelector('.timeline-body');
+      }
       if (!scrollContainer) return;
 
       // Find the row column to get its width
       const rowInfo = scrollContainer.querySelector('.row-info');
-      const rowColumnWidth = rowInfo ? rowInfo.offsetWidth : 200; // Fallback to 200px
+      const rowColumnWidth = rowInfo?.offsetWidth || 200; // Fallback to 200px
 
       const containerRect = scrollContainer.getBoundingClientRect();
       const barRect = barRef.value.getBoundingClientRect();

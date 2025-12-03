@@ -8,6 +8,7 @@
       :row-column-style="rowColumnStyle"
       :day-column-style="dayColumnStyle"
       :days-container-style="daysContainerStyle"
+      @header-scroll="handleHeaderScroll"
     />
 
     <!-- Timeline Rows -->
@@ -59,7 +60,7 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useTimelinePlanning } from './composables/useTimelinePlanning';
 import TimelineHeader from './components/TimelineHeader.vue';
 import TimelineRow from './components/TimelineRow.vue';
@@ -83,13 +84,102 @@ export default {
     // Use the main composable for all business logic
     const planning = useTimelinePlanning(props, emit);
 
+    // Internal variables for NoCode users
+    const { value: selectedItem, setValue: setSelectedItem } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'selectedItem',
+      type: 'object',
+      defaultValue: null,
+    });
+
+    const { value: selectedRow, setValue: setSelectedRow } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'selectedRow',
+      type: 'object',
+      defaultValue: null,
+    });
+
+    const { value: hoveredItem, setValue: setHoveredItem } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'hoveredItem',
+      type: 'object',
+      defaultValue: null,
+    });
+
+    const { value: hoveredRow, setValue: setHoveredRow } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'hoveredRow',
+      type: 'object',
+      defaultValue: null,
+    });
+
+    const { value: visibleStartDate, setValue: setVisibleStartDate } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'visibleStartDate',
+      type: 'string',
+      defaultValue: '',
+    });
+
+    const { value: visibleEndDate, setValue: setVisibleEndDate } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'visibleEndDate',
+      type: 'string',
+      defaultValue: '',
+    });
+
+    const { value: totalItemCount, setValue: setTotalItemCount } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'totalItemCount',
+      type: 'number',
+      defaultValue: 0,
+    });
+
+    const { value: totalRowCount, setValue: setTotalRowCount } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'totalRowCount',
+      type: 'number',
+      defaultValue: 0,
+    });
+
+    const { value: scrollPosition, setValue: setScrollPosition } = wwLib.wwVariable.useComponentVariable({
+      uid: props.uid,
+      name: 'scrollPosition',
+      type: 'object',
+      defaultValue: { left: 0, top: 0 },
+    });
+
+    // Watch for data changes and update count variables
+    watch(() => planning.activeRows.value, (rows) => {
+      setTotalRowCount(rows?.length || 0);
+    }, { immediate: true });
+
+    watch(() => props.content?.items, (items) => {
+      setTotalItemCount(Array.isArray(items) ? items.length : 0);
+    }, { immediate: true, deep: true });
+
+    // Watch for timeline days and update visible date range
+    watch(() => planning.timelineDays.value, (days) => {
+      if (days && days.length > 0) {
+        setVisibleStartDate(days[0]?.date || '');
+        setVisibleEndDate(days[days.length - 1]?.date || '');
+      }
+    }, { immediate: true });
+
     // Scroll sync between header and body
     const headerComponent = ref(null);
     const bodyScrollRef = ref(null);
 
+    // Flag to prevent infinite scroll loops
+    let isSyncing = false;
+
     const handleBodyScroll = (event) => {
+      if (isSyncing) return;
+
+      isSyncing = true;
       try {
         const scrollLeft = event?.target?.scrollLeft ?? bodyScrollRef.value?.scrollLeft ?? 0;
+        const scrollTop = event?.target?.scrollTop ?? bodyScrollRef.value?.scrollTop ?? 0;
+
         // Sync both week numbers and days containers
         if (headerComponent.value?.headerScrollRef) {
           headerComponent.value.headerScrollRef.scrollLeft = scrollLeft;
@@ -97,8 +187,64 @@ export default {
         if (headerComponent.value?.daysScrollRef) {
           headerComponent.value.daysScrollRef.scrollLeft = scrollLeft;
         }
+
+        // Update scroll position internal variable
+        setScrollPosition({ left: scrollLeft, top: scrollTop });
+
+        // Calculate visible date range based on scroll position
+        const dayWidth = parseInt(props.content?.dayColumnWidth || '40px', 10);
+        const containerWidth = bodyScrollRef.value?.clientWidth || 0;
+        const visibleDayStart = Math.floor(scrollLeft / dayWidth);
+        const visibleDayEnd = Math.ceil((scrollLeft + containerWidth) / dayWidth);
+
+        const days = planning.timelineDays.value || [];
+        const visibleStart = days[visibleDayStart]?.date || '';
+        const visibleEnd = days[Math.min(visibleDayEnd, days.length - 1)]?.date || '';
+
+        // Emit timeline-scrolled trigger
+        emit('trigger-event', {
+          name: 'timeline-scrolled',
+          event: {
+            scrollLeft,
+            scrollTop,
+            visibleStartDate: visibleStart,
+            visibleEndDate: visibleEnd,
+          },
+        });
       } catch (error) {
-        console.error('Scroll sync error:', error);
+        /* wwEditor:start */
+        if (props.wwEditorState?.isEditing) {
+          console.warn('Scroll sync error:', error);
+        }
+        /* wwEditor:end */
+      } finally {
+        // Reset flag after a small delay
+        setTimeout(() => {
+          isSyncing = false;
+        }, 10);
+      }
+    };
+
+    /**
+     * Handle scroll from header - sync to body
+     */
+    const handleHeaderScroll = (scrollLeft) => {
+      if (isSyncing || !bodyScrollRef.value) return;
+
+      isSyncing = true;
+      try {
+        bodyScrollRef.value.scrollLeft = scrollLeft;
+      } catch (error) {
+        /* wwEditor:start */
+        if (props.wwEditorState?.isEditing) {
+          console.warn('Header scroll sync error:', error);
+        }
+        /* wwEditor:end */
+      } finally {
+        // Reset flag after a small delay
+        setTimeout(() => {
+          isSyncing = false;
+        }, 10);
       }
     };
 
@@ -144,6 +290,17 @@ export default {
       }
     };
 
+    // Wrap click handlers to update internal variables
+    const handleRowClickWithVariable = (row) => {
+      setSelectedRow(row);
+      planning.handleRowClick(row);
+    };
+
+    const handleItemClickWithVariable = (item) => {
+      setSelectedItem(item);
+      planning.handleItemClick(item);
+    };
+
     // Return everything needed by the template
     return {
       // Data (new generic names)
@@ -158,8 +315,8 @@ export default {
       getDayLoadInfo: planning.getDayLoadInfo,
       getRowStyle: planning.getRowStyle,
       getItemBarStyle: planning.getItemBarStyle,
-      handleRowClick: planning.handleRowClick,
-      handleItemClick: planning.handleItemClick,
+      handleRowClick: handleRowClickWithVariable,
+      handleItemClick: handleItemClickWithVariable,
       showTooltip: planning.showTooltip,
       hideTooltip: planning.hideTooltip,
 
@@ -175,6 +332,7 @@ export default {
       headerComponent,
       bodyScrollRef,
       handleBodyScroll,
+      handleHeaderScroll,
 
       // Drag to scroll
       handleMouseDown,

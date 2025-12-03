@@ -204,13 +204,7 @@ export function useTimelineData(props) {
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    console.log('📊 Calculating required days:', {
-      itemCount: items?.length,
-      startDate: format(startDate, 'yyyy-MM-dd')
-    });
-
     if (!items || items.length === 0) {
-      console.log('⚠️ No items found, using default:', DEFAULT_NUMBER_OF_DAYS);
       return DEFAULT_NUMBER_OF_DAYS;
     }
 
@@ -219,33 +213,20 @@ export function useTimelineData(props) {
       .map(a => {
         try {
           const date = typeof a.end_date === 'string' ? parseISO(a.end_date) : a.end_date;
-          console.log(`  Item ${a.id}: ${a.end_date} → ${date ? format(date, 'yyyy-MM-dd') : 'INVALID'}`);
           return date;
         } catch (e) {
-          console.log(`  Item ${a.id}: ${a.end_date} → ERROR: ${e.message}`);
           return null;
         }
       })
       .filter(date => date !== null && date instanceof Date && !isNaN(date));
 
-    console.log(`📅 Valid end dates found: ${endDates.length}/${items.length}`);
-
     if (endDates.length === 0) {
-      console.log('⚠️ No valid end dates, using default:', DEFAULT_NUMBER_OF_DAYS);
       return DEFAULT_NUMBER_OF_DAYS;
     }
 
     const latestEndDate = max(endDates);
     const daysDiff = differenceInDays(latestEndDate, startDate);
     const requiredDays = Math.max(daysDiff + 7, DEFAULT_NUMBER_OF_DAYS);
-
-    console.log('✨ Calculation result:', {
-      latestEndDate: format(latestEndDate, 'yyyy-MM-dd'),
-      daysDiff,
-      buffer: 7,
-      requiredDays,
-      usingDefault: requiredDays === DEFAULT_NUMBER_OF_DAYS
-    });
 
     // Add a buffer of 7 days after the last item, and ensure minimum of DEFAULT_NUMBER_OF_DAYS
     return requiredDays;
@@ -263,13 +244,6 @@ export function useTimelineData(props) {
       ? (props.content?.numberOfDays || 90)
       : calculateRequiredDays();
 
-    console.log('🗓️ Timeline calculation:', {
-      useManualDays: props.content?.useManualDays,
-      numberOfDays,
-      startDate: format(startDate, 'yyyy-MM-dd'),
-      itemCount: activeItems.value?.length
-    });
-
     const days = [];
     for (let i = 0; i < numberOfDays; i++) {
       const dayDate = addDays(startDate, i);
@@ -283,8 +257,6 @@ export function useTimelineData(props) {
         date: dayDate,
       });
     }
-
-    console.log(`✅ Generated ${days.length} days from ${days[0]?.dayKey} to ${days[days.length - 1]?.dayKey}`);
 
     return days;
   });

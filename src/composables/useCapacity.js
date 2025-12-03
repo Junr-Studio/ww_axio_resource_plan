@@ -13,19 +13,28 @@ export function useCapacity(activeItems) {
    * @returns {number} Total load percentage for that row on that date
    */
   const calculateDailyLoad = (rowId, date) => {
+    if (!rowId || !date || !activeItems.value) return 0;
+
     const rowItems = activeItems.value.filter(
-      (a) => a.row_id === rowId || a.resource_id === rowId
+      (a) => a?.row_id === rowId || a?.resource_id === rowId
     );
 
     let totalLoad = 0;
 
     rowItems.forEach((item) => {
-      const itemStart = parseISO(item.start_date);
-      const itemEnd = parseISO(item.end_date);
+      if (!item?.start_date || !item?.end_date) return;
 
-      // Check if this day falls within the item period [start, end)
-      if (isDateInRange(date, itemStart, itemEnd)) {
-        totalLoad += item.load_percentage || item.capacity_percentage || 0;
+      try {
+        const itemStart = parseISO(item.start_date);
+        const itemEnd = parseISO(item.end_date);
+
+        // Check if this day falls within the item period [start, end)
+        if (isDateInRange(date, itemStart, itemEnd)) {
+          totalLoad += item?.load_percentage || item?.capacity_percentage || 0;
+        }
+      } catch (error) {
+        // Skip items with invalid dates
+        return;
       }
     });
 
@@ -39,6 +48,9 @@ export function useCapacity(activeItems) {
    * @returns {Object} Object with capacity and cssClass properties
    */
   const getDayLoadInfo = (rowId, date) => {
+    if (!rowId || !date) {
+      return { capacity: 0, cssClass: '' };
+    }
     const usedLoad = calculateDailyLoad(rowId, date);
     return getCapacityInfo(usedLoad);
   };
@@ -53,35 +65,53 @@ export function useCapacity(activeItems) {
    * @returns {Object} { color, borderWidth, showBorder }
    */
   const getLoadStatusInfo = (rowId, item, timelineDays, props) => {
-    const itemStart = parseISO(item.start_date);
-    const itemEnd = parseISO(item.end_date);
+    if (!rowId || !item?.start_date || !item?.end_date || !timelineDays || !props) {
+      return {
+        color: 'transparent',
+        borderWidth: '0px',
+        showBorder: false,
+      };
+    }
 
-    // Check load for each day this item spans
-    let maxLoad = 0;
-    timelineDays.forEach((day) => {
-      // Check if this day falls within the item period
-      if (isDateInRange(day.date, itemStart, itemEnd)) {
-        const load = calculateDailyLoad(rowId, day.date);
-        if (load > maxLoad) {
-          maxLoad = load;
+    try {
+      const itemStart = parseISO(item.start_date);
+      const itemEnd = parseISO(item.end_date);
+
+      // Check load for each day this item spans
+      let maxLoad = 0;
+      timelineDays.forEach((day) => {
+        if (!day?.date) return;
+        // Check if this day falls within the item period
+        if (isDateInRange(day.date, itemStart, itemEnd)) {
+          const load = calculateDailyLoad(rowId, day.date);
+          if (load > maxLoad) {
+            maxLoad = load;
+          }
         }
-      }
-    });
+      });
 
-    // Return border info based on max load
-    if (maxLoad > 100) {
-      return {
-        color: props.content?.colorHighLoad || props.content?.colorOverCapacity || '#ef4444',
-        borderWidth: '1px',
-        showBorder: true,
-      };
-    } else if (maxLoad >= 80) {
-      return {
-        color: props.content?.colorMediumLoad || props.content?.colorNearFull || '#f59e0b',
-        borderWidth: '1px',
-        showBorder: true,
-      };
-    } else {
+      // Return border info based on max load
+      if (maxLoad > 100) {
+        return {
+          color: props.content?.colorHighLoad || props.content?.colorOverCapacity || '#ef4444',
+          borderWidth: '1px',
+          showBorder: true,
+        };
+      } else if (maxLoad >= 80) {
+        return {
+          color: props.content?.colorMediumLoad || props.content?.colorNearFull || '#f59e0b',
+          borderWidth: '1px',
+          showBorder: true,
+        };
+      } else {
+        return {
+          color: 'transparent',
+          borderWidth: '0px',
+          showBorder: false,
+        };
+      }
+    } catch (error) {
+      // Return safe default for invalid dates
       return {
         color: 'transparent',
         borderWidth: '0px',

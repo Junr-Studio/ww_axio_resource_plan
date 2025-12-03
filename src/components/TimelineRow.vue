@@ -163,16 +163,16 @@ export default {
 }
 
 .row-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .row-avatar-placeholder {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #3b82f6;
   color: white;
@@ -180,7 +180,7 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 
