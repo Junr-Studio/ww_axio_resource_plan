@@ -13,7 +13,7 @@ export default {
     items: {
       label: { en: "Timeline Items" },
       type: "Array",
-      section: "data",
+      section: "settings",
       bindable: true,
       defaultValue: [],
       options: {
@@ -66,7 +66,7 @@ export default {
     itemIdFormula: {
       label: { en: 'Item ID Field' },
       type: 'Formula',
-      section: 'item-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -87,7 +87,7 @@ export default {
     itemStartDateFormula: {
       label: { en: 'Start Date Field' },
       type: 'Formula',
-      section: 'item-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -108,7 +108,7 @@ export default {
     itemEndDateFormula: {
       label: { en: 'End Date Field' },
       type: 'Formula',
-      section: 'item-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -150,7 +150,7 @@ export default {
     itemLoadFormula: {
       label: { en: 'Load/Utilization Field' },
       type: 'Formula',
-      section: 'item-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -174,7 +174,7 @@ export default {
     rowIdFormula: {
       label: { en: 'Row ID Field' },
       type: 'Formula',
-      section: 'row-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -189,7 +189,7 @@ export default {
     rowTitleFormula: {
       label: { en: 'Row Title Field' },
       type: 'Formula',
-      section: 'row-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -204,7 +204,7 @@ export default {
     rowSubtitleFormula: {
       label: { en: 'Row Subtitle Field' },
       type: 'Formula',
-      section: 'row-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -219,7 +219,7 @@ export default {
     rowImageFormula: {
       label: { en: 'Row Image Field' },
       type: 'Formula',
-      section: 'row-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -237,7 +237,7 @@ export default {
     categoryIdFormula: {
       label: { en: 'Category ID Field' },
       type: 'Formula',
-      section: 'category-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -252,7 +252,7 @@ export default {
     categoryNameFormula: {
       label: { en: 'Category Name Field' },
       type: 'Formula',
-      section: 'category-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -267,7 +267,7 @@ export default {
     categoryColorFormula: {
       label: { en: 'Category Color Field' },
       type: 'Formula',
-      section: 'category-mapping',
+      section: 'settings',
       options: content => ({
         template: Array.isArray(content.items) && content.items.length > 0 ? content.items[0] : {},
       }),
@@ -285,7 +285,7 @@ export default {
     exclusions: {
       label: { en: "Exclusion Periods" },
       type: "Array",
-      section: "exclusion-mapping",
+      section: "settings",
       bindable: true,
       defaultValue: [],
       options: {
@@ -614,6 +614,100 @@ export default {
       /* wwEditor:end */
     },
   },
+
+  customSettingsPropertiesOrder: [
+    // Data Source
+    'items',
+
+    // Item Mappings - Collapsible Group
+    {
+      label: 'Item Field Mappings',
+      isCollapsible: true,
+      properties: [
+        'itemIdFormula',
+        'itemStartDateFormula',
+        'itemEndDateFormula',
+        'showLoadPercentage',
+        'itemLoadFormula',
+      ],
+    },
+
+    // Row Mappings - Collapsible Group
+    {
+      label: 'Row Field Mappings',
+      isCollapsible: true,
+      properties: [
+        'rowIdFormula',
+        'rowTitleFormula',
+        'rowSubtitleFormula',
+        'rowImageFormula',
+      ],
+    },
+
+    // Category Mappings - Collapsible Group
+    {
+      label: 'Category Field Mappings',
+      isCollapsible: true,
+      properties: [
+        'categoryIdFormula',
+        'categoryNameFormula',
+        'categoryColorFormula',
+      ],
+    },
+
+    // Exclusion Mappings - Collapsible Group
+    {
+      label: 'Exclusion Period Mappings',
+      isCollapsible: true,
+      properties: [
+        'exclusions',
+        'exclusionRowIdFormula',
+        'exclusionStartDateFormula',
+        'exclusionEndDateFormula',
+      ],
+    },
+
+    // Timeline Configuration
+    'useManualDays',
+    'numberOfDays',
+    'showWeekends',
+  ],
+
+  customStylePropertiesOrder: [
+    // Dimensions
+    {
+      label: 'Grid Dimensions',
+      isCollapsible: true,
+      properties: [
+        'rowHeight',
+        'dayColumnWidth',
+        'resourceColumnWidth',
+      ],
+    },
+
+    // Load Status Colors
+    {
+      label: 'Load Status Colors',
+      isCollapsible: true,
+      properties: [
+        'colorLowLoad',
+        'colorMediumLoad',
+        'colorHighLoad',
+      ],
+    },
+
+    // General Colors
+    {
+      label: 'General Colors',
+      isCollapsible: true,
+      properties: [
+        'backgroundColor',
+        'borderColor',
+        'headerBackgroundColor',
+        'textColor',
+      ],
+    },
+  ],
 
   triggerEvents: [
     {
